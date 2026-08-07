@@ -1,0 +1,38 @@
+/* Dark Mode Support */
+.dark {
+  --ink: #e8f0ec;
+  --muted: #aebaba;
+  --line: #2d3b35;
+  --surface: #1f2b26;
+  --canvas: #121a17;
+  --green: #3ddc9a;
+  --green-soft: #1a3a2f;
+  --red: #ea9292;
+  --amber: #dba668;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not(.light) {
+    --ink: #e8f0ec;
+    --muted: #aebaba;
+    --line: #2d3b35;
+    --surface: #1f2b26;
+    --canvas: #121a17;
+    --green: #3ddc9a;
+    --green-soft: #1a3a2f;
+    --red: #ea9292;
+    --amber: #dba668;
+  }
+}
+
+html {
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+.dark-only { display: none !important; }
+.light-only { display: inline !important; }
+
+.dark .dark-only { display: inline !important; }
+.dark .light-only { display: none !important; }
+
+.hidden { display: none !important; }

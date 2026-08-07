@@ -1,2 +1,11 @@
+import { autoBackupBeforeMigration } from "./backup-database";
 import "../lib/db";
-console.log("Database migrations applied.");
+
+// Auto backup before migration
+const latestBackup = autoBackupBeforeMigration();
+
+if (!latestBackup) {
+  console.log("🔄 New database created (no existing schema).");
+} else {
+  console.log(`✅ Database migrations applied.`);
+}
