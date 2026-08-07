@@ -16,6 +16,10 @@ function createDatabase() {
       id TEXT PRIMARY KEY, name TEXT NOT NULL, type TEXT NOT NULL DEFAULT 'wallet' CHECK(type IN ('wallet','bank','cash','other')),
       balance INTEGER NOT NULL DEFAULT 0, currency TEXT NOT NULL DEFAULT 'IDR', note TEXT, created_at TEXT NOT NULL, updated_at TEXT NOT NULL
     );
+    CREATE TABLE IF NOT EXISTS wallets (
+      id TEXT PRIMARY KEY, name TEXT NOT NULL, type TEXT NOT NULL DEFAULT 'wallet' CHECK(type IN ('wallet','bank','cash','other')),
+      balance INTEGER NOT NULL DEFAULT 0, currency TEXT NOT NULL DEFAULT 'IDR', note TEXT, created_at TEXT NOT NULL, updated_at TEXT NOT NULL
+    );
     CREATE TABLE IF NOT EXISTS transfers (
       id TEXT PRIMARY KEY, source_wallet_id TEXT NOT NULL REFERENCES wallets(id),
       destination_wallet_id TEXT NOT NULL REFERENCES wallets(id), amount INTEGER NOT NULL,
