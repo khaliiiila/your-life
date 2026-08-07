@@ -11,19 +11,10 @@ function createDatabase() {
   db.pragma("foreign_keys = ON");
   db.pragma("busy_timeout = 5000");
   db.exec("CREATE TABLE IF NOT EXISTS schema_migrations (version INTEGER PRIMARY KEY, applied_at TEXT NOT NULL)");
-   const migrations = [{ version: 1, sql: `
+  const migrations = [{ version: 1, sql: `
     CREATE TABLE IF NOT EXISTS wallets (
       id TEXT PRIMARY KEY, name TEXT NOT NULL, type TEXT NOT NULL DEFAULT 'wallet' CHECK(type IN ('wallet','bank','cash','other')),
       balance INTEGER NOT NULL DEFAULT 0, currency TEXT NOT NULL DEFAULT 'IDR', note TEXT, created_at TEXT NOT NULL, updated_at TEXT NOT NULL
-    );
-    CREATE TABLE IF NOT EXISTS wallets (
-      id TEXT PRIMARY KEY, name TEXT NOT NULL, type TEXT NOT NULL DEFAULT 'wallet' CHECK(type IN ('wallet','bank','cash','other')),
-      balance INTEGER NOT NULL DEFAULT 0, currency TEXT NOT NULL DEFAULT 'IDR', note TEXT, created_at TEXT NOT NULL, updated_at TEXT NOT NULL
-    );
-    CREATE TABLE IF NOT EXISTS transfers (
-      id TEXT PRIMARY KEY, source_wallet_id TEXT NOT NULL REFERENCES wallets(id),
-      destination_wallet_id TEXT NOT NULL REFERENCES wallets(id), amount INTEGER NOT NULL,
-      fee INTEGER NOT NULL DEFAULT 0, date TEXT NOT NULL, description TEXT, created_at TEXT NOT NULL
     );
     CREATE TABLE IF NOT EXISTS transfers (
       id TEXT PRIMARY KEY, source_wallet_id TEXT NOT NULL REFERENCES wallets(id),
@@ -61,4 +52,22 @@ function createDatabase() {
       created_at TEXT NOT NULL,
       updated_at TEXT NOT NULL
     );
-   ` }, { version: 2, sql: `
+  ` }];
+  const apply = db.transaction(() => {
+    for (const migration of migrations) {
+      if (db.prepare("SELECT 1 FROM schema_migrations WHERE version = ?").get(migration.version)) continue;
+      db.exec(migration.sql);
+      db.prepare("INSERT INTO schema_migrations (version, applied_at) VALUES (?, ?)").run(migration.version, new Date().toISOString());
+    }
+  });
+  apply();
+  return db;
+}
+
+const globalWithDb = globalThis as typeof globalThis & { financeDb?: Database.Database };
+export const db = globalWithDb.financeDb ?? createDatabase();
+if (process.env.NODE_ENV !== "production") globalWithDb.financeDb = db;
+
+export function nowIso() {
+  return new Date().toISOString();
+}
