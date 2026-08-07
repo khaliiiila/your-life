@@ -4,6 +4,7 @@ import { CalendarClock, CircleAlert, Clock3, LoaderCircle, Plus, RotateCw, Trash
 import { FormEvent, useEffect, useRef, useState } from "react";
 import { idr } from "@/lib/formatters";
 import { MobileNav } from "@/components/mobile-nav";
+import { ToastContainer, useToast } from "@/components/toast";
 
 type Wallet = { id: string; name: string; type: string };
 type Expense = { id: string; name: string; amount: number; wallet_id: string | null; wallet_name: string | null; category: string; due_date: string; recurrence: string; status: string };
@@ -11,6 +12,7 @@ const categories = ["tagihan", "kos", "makanan", "transport", "family", "kesehat
 const blankForm = { name: "", amount: "", walletId: "", category: "tagihan", dueDate: new Date().toISOString().slice(0, 10), recurrence: "once", note: "" };
 
 export function UpcomingWorkspace() {
+  const { toasts, addToast, removeToast } = useToast();
   const [expenses, setExpenses] = useState<Expense[]>([]);
   const [wallets, setWallets] = useState<Wallet[]>([]);
   const [form, setForm] = useState(blankForm);
@@ -35,12 +37,12 @@ export function UpcomingWorkspace() {
 
   async function submit(event: FormEvent) {
     event.preventDefault(); setSaving(true); setMessage("");
-    if (!Number.isInteger(Number(form.amount)) || Number(form.amount) <= 0) { setMessage("Nominal harus berupa angka bulat lebih dari nol."); setSaving(false); amountRef.current?.focus(); return; }
+    if (!Number.isInteger(Number(form.amount)) || Number(form.amount) <= 0) { setMessage("Nominal harus berupa angka bulat lebih dari nol."); addToast("Nominal harus valid", "error"); setSaving(false); amountRef.current?.focus(); return; }
     try {
       const response = await fetch("/api/upcoming-expenses", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ ...form, amount: Number(form.amount) }) });
       const result = await response.json(); if (!response.ok) throw new Error(result.error);
-      setForm((current) => ({ ...blankForm, walletId: current.walletId })); setMessage("Pengeluaran berhasil dijadwalkan."); await load();
-    } catch (submitError) { setMessage(submitError instanceof Error ? submitError.message : "Pengeluaran tidak dapat disimpan."); } finally { setSaving(false); }
+      setForm((current) => ({ ...blankForm, walletId: current.walletId })); setMessage("Pengeluaran berhasil dijadwalkan."); addToast("Pengeluaran berhasil dijadwalkan", "success"); await load();
+    } catch (submitError) { const errorMsg = submitError instanceof Error ? submitError.message : "Pengeluaran tidak dapat disimpan."; setMessage(errorMsg); addToast(errorMsg, "error"); } finally { setSaving(false); }
   }
 
   async function pay(expense: Expense) {
@@ -51,10 +53,10 @@ export function UpcomingWorkspace() {
   async function remove(expense: Expense) {
     if (!window.confirm(`Hapus jadwal "${expense.name}"?`)) return;
     setPendingId(expense.id); setMessage("");
-    try { const response = await fetch(`/api/upcoming-expenses/${expense.id}`, { method: "DELETE" }); const result = await response.json(); if (!response.ok) throw new Error(result.error); setMessage("Jadwal pengeluaran dihapus."); await load(); } catch (removeError) { setMessage(removeError instanceof Error ? removeError.message : "Jadwal tidak dapat dihapus."); } finally { setPendingId(""); }
+    try { const response = await fetch(`/api/upcoming-expenses/${expense.id}`, { method: "DELETE" }); const result = await response.json(); if (!response.ok) throw new Error(result.error); setMessage("Jadwal pengeluaran dihapus."); addToast("Jadwal pengeluaran dihapus", "success"); await load(); } catch (removeError) { const errorMsg = removeError instanceof Error ? removeError.message : "Jadwal tidak dapat dihapus."; setMessage(errorMsg); addToast(errorMsg, "error"); } finally { setPendingId(""); }
   }
 
-  return <><a className="skip-link" href="#upcoming-list">Lewati ke daftar pengeluaran</a><header className="mobile-page-bar"><MobileNav /></header><div className="content transaction-page">
+  return <><ToastContainer toasts={toasts} onClose={removeToast} /><a className="skip-link" href="#upcoming-list">Lewati ke daftar pengeluaran</a><header className="mobile-page-bar"><MobileNav /></header><div className="content transaction-page">
     <div className="page-heading"><div><p className="eyebrow">PERENCANAAN KEUANGAN</p><h1>Pengeluaran mendatang</h1><p className="muted">Siapkan tagihan sebelum jatuh tempo dan jaga saldo tetap aman.</p></div></div>
     <div className="transaction-layout upcoming-layout">
       <section className="card form-card" aria-labelledby="upcoming-form-title"><div className="form-title-icon"><CalendarClock size={20} /></div><h2 id="upcoming-form-title">Jadwalkan pengeluaran</h2><p className="muted form-intro">Pengeluaran baru mengurangi saldo setelah kamu menekan “Bayar sekarang”.</p><form onSubmit={submit}><Field label="Nama pengeluaran" id="upcoming-name"><input id="upcoming-name" placeholder="Contoh: listrik bulanan" value={form.name} onChange={(event) => setForm({ ...form, name: event.target.value })} required /></Field><Field label="Nominal" id="upcoming-amount"><input ref={amountRef} id="upcoming-amount" type="number" inputMode="numeric" min="1" step="1" placeholder="Contoh: 250000" value={form.amount} onChange={(event) => setForm({ ...form, amount: event.target.value })} required /></Field><Field label="Wallet sumber" id="upcoming-wallet"><select id="upcoming-wallet" value={form.walletId} onChange={(event) => setForm({ ...form, walletId: event.target.value })}>{wallets.map((wallet) => <option value={wallet.id} key={wallet.id}>{wallet.name}</option>)}</select></Field><div className="form-grid"><Field label="Kategori" id="upcoming-category"><select id="upcoming-category" value={form.category} onChange={(event) => setForm({ ...form, category: event.target.value })}>{categories.map((category) => <option key={category}>{category}</option>)}</select></Field><Field label="Jatuh tempo" id="upcoming-date"><input id="upcoming-date" type="date" value={form.dueDate} onChange={(event) => setForm({ ...form, dueDate: event.target.value })} required /></Field></div><Field label="Pengulangan" id="upcoming-recurrence"><select id="upcoming-recurrence" value={form.recurrence} onChange={(event) => setForm({ ...form, recurrence: event.target.value })}><option value="once">Sekali saja</option><option value="weekly">Setiap minggu</option><option value="monthly">Setiap bulan</option><option value="yearly">Setiap tahun</option></select></Field>{message && <div className="form-message success" role="status"><span>{message}</span><button type="button" aria-label="Tutup pesan" onClick={() => setMessage("")}><X size={16} /></button></div>}<button className="button primary submit-button" disabled={saving}>{saving ? <LoaderCircle className="spin" size={17} /> : <Plus size={17} />}{saving ? "Menyimpan..." : "Jadwalkan"}</button></form></section>

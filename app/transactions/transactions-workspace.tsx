@@ -4,6 +4,7 @@ import { ArrowDownLeft, ArrowLeftRight, ArrowUpRight, CircleAlert, Filter, Loade
 import { FormEvent, useEffect, useRef, useState } from "react";
 import { formatDate, idr } from "@/lib/formatters";
 import { MobileNav } from "@/components/mobile-nav";
+import { ToastContainer, useToast } from "@/components/toast";
 
 type Wallet = { id: string; name: string; type: string };
 type Transaction = { id: string; type: string; wallet_id: string; wallet_name: string; amount: number; category: string; description: string | null; date: string };
@@ -11,6 +12,7 @@ const categories = ["makanan", "transport", "tagihan", "kos", "family", "donasi"
 const initialForm = { type: "expense", walletId: "", amount: "", category: "makanan", description: "", date: new Date().toISOString().slice(0, 10), note: "" };
 
 export function TransactionsWorkspace() {
+  const { toasts, addToast, removeToast } = useToast();
   const [wallets, setWallets] = useState<Wallet[]>([]);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [loading, setLoading] = useState(true);
@@ -43,20 +45,40 @@ export function TransactionsWorkspace() {
   async function submit(event: FormEvent) {
     event.preventDefault(); setMessage(""); setSubmitState("pending");
     const payload = mode === "transaction" ? { ...form, amount: Number(form.amount) } : { ...transfer, amount: Number(transfer.amount), fee: Number(transfer.fee || 0) };
-    if (!Number.isInteger(payload.amount) || payload.amount <= 0) { setMessage("Nominal harus berupa angka bulat lebih dari nol."); setSubmitState("error"); amountRef.current?.focus(); return; }
-    if (mode === "transfer" && transfer.sourceWalletId === transfer.destinationWalletId) { setMessage("Wallet sumber dan tujuan harus berbeda."); setSubmitState("error"); return; }
+    if (!Number.isInteger(payload.amount) || payload.amount <= 0) { 
+      setMessage("Nominal harus berupa angka bulat lebih dari nol."); 
+      addToast("Nominal harus valid", "error");
+      setSubmitState("error"); 
+      amountRef.current?.focus(); 
+      return; 
+    }
+    if (mode === "transfer" && transfer.sourceWalletId === transfer.destinationWalletId) { 
+      setMessage("Wallet sumber dan tujuan harus berbeda."); 
+      addToast("Wallet harus berbeda", "error");
+      setSubmitState("error"); 
+      return; 
+    }
     try {
       const response = await fetch(mode === "transaction" ? "/api/transactions" : "/api/transfers", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) });
-      const result = await response.json(); if (!response.ok) throw new Error(result.error);
-      setSubmitState("success"); setMessage(mode === "transaction" ? "Transaksi berhasil dicatat." : "Transfer berhasil dipindahkan.");
+      const result = await response.json(); 
+      if (!response.ok) throw new Error(result.error);
+      setSubmitState("success"); 
+      const successMsg = mode === "transaction" ? "Transaksi berhasil dicatat." : "Transfer berhasil dipindahkan.";
+      setMessage(successMsg);
+      addToast(successMsg, "success");
       if (mode === "transaction") setForm((current) => ({ ...initialForm, walletId: current.walletId, type: current.type }));
       else setTransfer((current) => ({ ...current, amount: "", fee: "0", description: "" }));
       await load();
-    } catch (error) { setSubmitState("error"); setMessage(error instanceof Error ? error.message : "Data tidak dapat disimpan."); }
+    } catch (error) { 
+      setSubmitState("error"); 
+      const errorMsg = error instanceof Error ? error.message : "Data tidak dapat disimpan.";
+      setMessage(errorMsg);
+      addToast(errorMsg, "error");
+    }
   }
 
   const visible = transactions.filter((item) => filter === "all" || item.type === filter);
-  return <><a className="skip-link" href="#transaction-list">Lewati ke daftar transaksi</a><header className="mobile-page-bar"><MobileNav /></header><div className="content transaction-page">
+  return <><ToastContainer toasts={toasts} onClose={removeToast} /><a className="skip-link" href="#transaction-list">Lewati ke daftar transaksi</a><header className="mobile-page-bar"><MobileNav /></header><div className="content transaction-page">
     <div className="page-heading"><div><p className="eyebrow">PENCATATAN HARIAN</p><h1>Transaksi</h1><p className="muted">Catat setiap pergerakan uang agar saldomu selalu akurat.</p></div></div>
     <div className="transaction-layout">
       <section className="card form-card" aria-labelledby="entry-title"><div className="mode-tabs" role="tablist" aria-label="Jenis pencatatan"><button role="tab" aria-selected={mode === "transaction"} className={mode === "transaction" ? "active" : ""} onClick={() => setMode("transaction")}><Plus size={17} />Transaksi</button><button role="tab" aria-selected={mode === "transfer"} className={mode === "transfer" ? "active" : ""} onClick={() => setMode("transfer")}><ArrowLeftRight size={17} />Transfer</button></div>
