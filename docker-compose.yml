@@ -1,0 +1,52 @@
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: deps
+    ports:
+      - "${APP_PORT:-3001}:3000"
+    environment:
+      DATABASE_PATH: /data/keuangan.db
+      NODE_ENV: development
+      HOSTNAME: 0.0.0.0
+      WATCHPACK_POLLING: "true"
+      NEXT_TELEMETRY_DISABLED: "1"
+      AI_API_KEY: "${AI_API_KEY:-development-only-change-me}"
+      TELEGRAM_BOT_TOKEN: "${TELEGRAM_BOT_TOKEN:-}"
+      TELEGRAM_CHAT_ID: "${TELEGRAM_CHAT_ID:-}"
+    volumes:
+      - .:/app
+      - node_modules:/app/node_modules
+      - ./data:/data
+    command: sh -c "npm run db:migrate && npm run dev -- --hostname 0.0.0.0"
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://127.0.0.1:3000/api/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+
+  scheduler:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: deps
+    environment:
+      AI_API_KEY: "${AI_API_KEY:-development-only-change-me}"
+      TZ: Asia/Jakarta
+    volumes:
+      - .:/app
+      - node_modules:/app/node_modules
+      - ./data:/data
+    depends_on:
+      app:
+        condition: service_healthy
+    command: >-
+      sh -c "mkdir -p /data/logs &&
+      printf '0 6 * * * cd /app && node scripts/send-scheduled-report.mjs yesterday >> /data/logs/reports.log 2>&1\n0 22 * * * cd /app && node scripts/send-scheduled-report.mjs today >> /data/logs/reports.log 2>&1\n' > /etc/crontabs/root &&
+      crond -f -l 2"
+    restart: unless-stopped
+
+volumes:
+  node_modules:
