@@ -1,7 +1,19 @@
 import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
+import { getWallet, walletHistory, walletRaisedTransactions } from "@/lib/wallets";
 
 type Context = { params: Promise<{ id: string }> };
+
+export async function GET(request: Request, context: Context) {
+  const { id } = await context.params;
+  const url = new URL(request.url);
+  const days = Math.min(366, Math.max(30, Number.parseInt(url.searchParams.get("days") || "366", 10) || 366));
+  const wallet = getWallet(id);
+  if (!wallet) return NextResponse.json({ error: "Wallet tidak ditemukan." }, { status: 404 });
+  const history = walletHistory(id, days);
+  const transactions = walletRaisedTransactions(id);
+  return NextResponse.json({ wallet, history, transactions });
+}
 
 export async function PATCH(request: Request, context: Context) {
   try {

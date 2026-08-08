@@ -3,6 +3,37 @@ import { db } from "./db";
 type WalletRow = { id: string; name: string; type: string; balance: number };
 type TransactionRow = { id: string; type: string; wallet_name: string; amount: number; category: string; description: string | null; date: string };
 
+export function getBalanceHistory(days = 366) {
+  const start = (db.prepare("SELECT COALESCE(SUM(starting_balance), 0) AS s FROM wallets").get() as { s: number }).s;
+
+  const target = new Date();
+  target.setDate(target.getDate() - days);
+  const targetKey = `${target.getFullYear()}-${String(target.getMonth() + 1).padStart(2, "0")}-${String(target.getDate()).padStart(2, "0")}`;
+
+  const prior = (db.prepare(`
+    SELECT COALESCE(SUM(CASE WHEN type IN ('income','adjustment') THEN amount ELSE -amount END), 0) AS change
+    FROM transactions WHERE date < ?
+  `).get(targetKey) as { change: number }).change;
+
+  const rows = db.prepare(`
+    SELECT date, CAST(SUM(CASE WHEN type IN ('income','adjustment') THEN amount ELSE -amount END) AS INTEGER) AS change
+    FROM transactions WHERE date >= ? GROUP BY date ORDER BY date
+  `).all(targetKey) as Array<{ date: string; change: number }>;
+
+  const pointMap = new Map(rows.map((r) => [r.date, r.change]));
+  const cursor = new Date(target);
+  const last = new Date();
+  let balance = start + prior;
+  const points: Array<{ date: string; balance: number }> = [];
+  while (cursor <= last) {
+    const key = `${cursor.getFullYear()}-${String(cursor.getMonth() + 1).padStart(2, "0")}-${String(cursor.getDate()).padStart(2, "0")}`;
+    balance += pointMap.get(key) ?? 0;
+    points.push({ date: key, balance });
+    cursor.setDate(cursor.getDate() + 1);
+  }
+  return points;
+}
+
 export function getDashboardData() {
   const wallets = db.prepare(`
     SELECT w.id, w.name, w.type,

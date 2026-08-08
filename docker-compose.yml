@@ -48,5 +48,12 @@ services:
       crond -f -l 2"
     restart: unless-stopped
 
+networks:
+  default:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.40.0.0/16
+
 volumes:
   node_modules:

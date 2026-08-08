@@ -14,7 +14,7 @@ function createDatabase() {
   const migrations = [{ version: 1, sql: `
     CREATE TABLE IF NOT EXISTS wallets (
       id TEXT PRIMARY KEY, name TEXT NOT NULL, type TEXT NOT NULL DEFAULT 'wallet' CHECK(type IN ('wallet','bank','cash','other')),
-      balance INTEGER NOT NULL DEFAULT 0, currency TEXT NOT NULL DEFAULT 'IDR', note TEXT, created_at TEXT NOT NULL, updated_at TEXT NOT NULL
+      starting_balance INTEGER NOT NULL DEFAULT 0, currency TEXT NOT NULL DEFAULT 'IDR', note TEXT, created_at TEXT NOT NULL, updated_at TEXT NOT NULL
     );
     CREATE TABLE IF NOT EXISTS transfers (
       id TEXT PRIMARY KEY, source_wallet_id TEXT NOT NULL REFERENCES wallets(id),
@@ -39,6 +39,17 @@ function createDatabase() {
       category TEXT NOT NULL, due_date TEXT NOT NULL, recurrence TEXT NOT NULL DEFAULT 'once', status TEXT NOT NULL DEFAULT 'scheduled',
       note TEXT, created_at TEXT NOT NULL, updated_at TEXT NOT NULL
     );
+    CREATE TABLE IF NOT EXISTS transactions (
+      id TEXT PRIMARY KEY,
+      type TEXT NOT NULL CHECK(type IN ('income', 'expense', 'adjustment')),
+      wallet_id TEXT NOT NULL REFERENCES wallets(id),
+      amount INTEGER NOT NULL,
+      category TEXT NOT NULL,
+      description TEXT,
+      date TEXT NOT NULL,
+      created_at TEXT NOT NULL,
+      note TEXT
+    );
   ` }, { version: 2, sql: `
     CREATE TABLE IF NOT EXISTS wishlists (
       id TEXT PRIMARY KEY,
@@ -51,6 +62,18 @@ function createDatabase() {
       status TEXT NOT NULL DEFAULT 'active' CHECK(status IN ('active', 'purchased', 'cancelled')),
       created_at TEXT NOT NULL,
       updated_at TEXT NOT NULL
+    );
+  ` }, { version: 3, sql: `
+    CREATE TABLE IF NOT EXISTS transactions (
+      id TEXT PRIMARY KEY,
+      type TEXT NOT NULL CHECK(type IN ('income', 'expense', 'adjustment')),
+      wallet_id TEXT NOT NULL REFERENCES wallets(id),
+      amount INTEGER NOT NULL,
+      category TEXT NOT NULL,
+      description TEXT,
+      date TEXT NOT NULL,
+      created_at TEXT NOT NULL,
+      note TEXT
     );
   ` }];
   const apply = db.transaction(() => {

@@ -1,6 +1,7 @@
 "use client";
 
 import { Banknote, CircleAlert, CreditCard, Landmark, LoaderCircle, Plus, RotateCw, Smartphone, WalletCards, X } from "lucide-react";
+import Link from "next/link";
 import { FormEvent, useEffect, useRef, useState } from "react";
 import { idr } from "@/lib/formatters";
 import { MobileNav } from "@/components/mobile-nav";
@@ -98,7 +99,7 @@ export function WalletsWorkspace() {
         <div><h2>Daftar wallet</h2><p className="muted">Saldo dihitung dari seluruh transaksi</p></div>
         <WalletCards size={20} className="section-icon" />
       </div>
-      {loading ? <div className="state-panel"><LoaderCircle className="spin" size={24} />Memuat wallet...</div> : error ? <div className="state-panel error"><CircleAlert size={24} /><strong>Gagal memuat data</strong><span>{error}</span><button className="button subtle" onClick={() => void load()}><RotateCw size={16} />Coba lagi</button></div> : <div className="wallet-grid">{wallets.map((wallet) => <article className="wallet-card" key={wallet.id}><div className={`wallet-icon ${wallet.type}`}>{wallet.type === "cash" ? <Banknote size={19} /> : wallet.type === "ewallet" ? <Smartphone size={19} /> : wallet.type === "credit" ? <CreditCard size={19} /> : <Landmark size={19} />}</div><div><small>{wallet.type === "ewallet" ? "E-wallet" : wallet.type === "credit" ? "Kredit / paylater" : wallet.type}</small><h2>{wallet.name}</h2></div><strong className={wallet.balance < 0 ? "negative" : ""}>{idr.format(wallet.balance)}</strong><span>Saldo awal {idr.format(wallet.starting_balance)}</span></article>)}</div>}
+      {loading ? <div className="state-panel"><LoaderCircle className="spin" size={24} />Memuat wallet...</div> : error ? <div className="state-panel error"><CircleAlert size={24} /><strong>Gagal memuat data</strong><span>{error}</span><button className="button subtle" onClick={() => void load()}><RotateCw size={16} />Coba lagi</button></div> : <div className="wallet-grid">{wallets.map((wallet) => <Link className="wallet-card" key={wallet.id} href={`/wallets/${wallet.id}`}><div className={`wallet-icon ${wallet.type}`}>{wallet.type === "cash" ? <Banknote size={19} /> : wallet.type === "ewallet" ? <Smartphone size={19} /> : wallet.type === "credit" ? <CreditCard size={19} /> : <Landmark size={19} />}</div><div><small>{wallet.type === "ewallet" ? "E-wallet" : wallet.type === "credit" ? "Kredit / paylater" : wallet.type}</small><h2>{wallet.name}</h2></div><strong className={wallet.balance < 0 ? "negative" : ""}>{idr.format(wallet.balance)}</strong><span>Saldo awal {idr.format(wallet.starting_balance)}</span></Link>)}</div>}
     </section>
   </div></div></>;
 }
