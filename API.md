@@ -49,6 +49,59 @@ Semua route AI memakai prefix `/api/ai` dan memetakan ke CRUD aplikasi:
 | POST | `/api/ai/reports/daily/send` | Generate & kirim laporan harian ke Telegram |
 | POST | `/api/ai/telegram/send` | Kirim pesan bebas ke Telegram |
 
+## DB Sync (Cloning Production → Dev)
+
+Untuk meng-clone database production ke dev lokal via secure API endpoint:
+
+### Server (production)
+
+Set env di server (`/data/.env` atau Docker Compose environment):
+
+```env
+DB_SYNC_SECRET=rahasia-acak-64-karakter
+```
+
+Setelah deploy, endpoint tersedia:
+
+| Method | Endpoint | Fungsi |
+| --- | --- | --- |
+| GET | `/api/admin/db-export` | Download dump SQLite production (WAL-safe backup) |
+
+```bash
+curl -H "Authorization: Bearer $DB_SYNC_SECRET" \
+  https://yl.infoinfo.web.id/api/admin/db-export \
+  -o keuangan_prod.db
+```
+
+### Lokal (dev)
+
+Set env di `.env` lokal:
+
+```env
+DB_SYNC_SECRET=rahasia-acak-64-karakter
+PROD_APP_URL=https://yl.infoinfo.web.id
+```
+
+Jalankan pull:
+
+```bash
+npm run db:pull
+```
+
+Script akan:
+1. Auto-backup DB lokal ke `backups/keuangan_dev_backup_<timestamp>.db`
+2. Download dari production via HTTP (HTTPS) dengan Bearer token
+3. Verifikasi integritas (PRAGMA integrity_check)
+4. Replace `data/keuangan.db`
+
+### Restore dari backup
+
+```bash
+npm run db:restore              # list semua backup
+npm run db:restore <index>     # restore dari index (0 = terbaru)
+npm run db:restore <path>      # restore dari file path spesifik
+```
+
 ## Laporan Otomatis
 
 Docker menjalankan service `scheduler` dengan zona waktu `Asia/Jakarta`:
