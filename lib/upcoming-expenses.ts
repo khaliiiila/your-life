@@ -55,6 +55,25 @@ export const payUpcomingExpense = db.transaction((id: string, walletId?: string)
   return transactionId;
 });
 
+export function updateUpcomingExpense(id: string, input: UpcomingExpenseInput & { walletId?: string }) {
+  const item = db.prepare("SELECT * FROM upcoming_expenses WHERE id = ? AND status IN ('scheduled', 'overdue')").get(id);
+  if (!item) throw new Error("Pengeluaran tidak ditemukan atau sudah dibayar.");
+  const updatedAt = nowIso();
+  db.prepare(`UPDATE upcoming_expenses 
+    SET name = ?, amount = ?, wallet_id = ?, category = ?, due_date = ?, recurrence = ?, note = ?, updated_at = ? 
+    WHERE id = ?`).run(
+    input.name.trim(),
+    input.amount,
+    input.walletId || null,
+    input.category,
+    input.dueDate,
+    input.recurrence,
+    input.note?.trim() || null,
+    updatedAt,
+    id
+  );
+}
+
 export function deleteUpcomingExpense(id: string) {
   const result = db.prepare("DELETE FROM upcoming_expenses WHERE id = ? AND status IN ('scheduled', 'overdue')").run(id);
   if (!result.changes) throw new Error("Pengeluaran tidak ditemukan atau sudah dibayar.");

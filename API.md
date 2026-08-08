@@ -32,14 +32,17 @@ Semua route AI memakai prefix `/api/ai` dan memetakan ke CRUD aplikasi:
 | --- | --- | --- |
 | GET | `/api/ai/dashboard` | Ringkasan saldo, arus kas, aset, utang |
 | GET/POST | `/api/ai/wallets` | Baca/tambah wallet |
+| PATCH/DELETE | `/api/ai/wallets/:id` | Update/hapus wallet |
 | GET/POST | `/api/ai/transactions` | Baca/tambah transaksi |
+| GET/PATCH/DELETE | `/api/ai/transactions/:id` | Detail/update/hapus transaksi |
 | POST | `/api/ai/transfers` | Transfer antar-wallet atomik |
 | GET/POST | `/api/ai/debts` | Baca/tambah utang/piutang |
+| PATCH/DELETE | `/api/ai/debts/:id` | Update/hapus utang |
 | POST | `/api/ai/debts/:id/payments` | Catat pembayaran |
 | GET/POST | `/api/ai/assets` | Baca/tambah aset |
 | PATCH/DELETE | `/api/ai/assets/:id` | Update valuasi/hapus aset |
 | GET/POST | `/api/ai/upcoming-expenses` | Baca/tambah pengeluaran mendatang |
-| POST/DELETE | `/api/ai/upcoming-expenses/:id` | Bayar/hapus jadwal |
+| PATCH/POST/DELETE | `/api/ai/upcoming-expenses/:id` | Update/bayar/hapus jadwal |
 | GET/POST | `/api/ai/wishlists` | Baca/tambah wishlist |
 | PATCH/DELETE | `/api/ai/wishlists/:id` | Update progress/hapus wishlist |
 | GET | `/api/ai/reports/daily` | Generate teks laporan harian (target: `today` / `yesterday`) |
