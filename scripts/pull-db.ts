@@ -3,6 +3,23 @@ import path from "node:path";
 import Database from "better-sqlite3";
 
 const ROOT_DIR = path.resolve(import.meta.dirname ?? __dirname, "..");
+
+function loadEnv() {
+  const envPath = path.join(ROOT_DIR, ".env");
+  if (!fs.existsSync(envPath)) return;
+  const content = fs.readFileSync(envPath, "utf-8");
+  for (const line of content.split("\n")) {
+    const trimmed = line.trim();
+    if (!trimmed || trimmed.startsWith("#")) continue;
+    const idx = trimmed.indexOf("=");
+    if (idx === -1) continue;
+    const key = trimmed.slice(0, idx).trim();
+    const val = trimmed.slice(idx + 1).trim().replace(/^["']|["']$/g, "");
+    if (!process.env[key]) process.env[key] = val;
+  }
+}
+loadEnv();
+
 const DATABASE_PATH =
   process.env.DATABASE_PATH ?? path.join(ROOT_DIR, "data", "keuangan.db");
 
@@ -11,7 +28,7 @@ const DB_SYNC_SECRET = process.env.DB_SYNC_SECRET;
 
 const BACKUPS_DIR = path.join(ROOT_DIR, "backups");
 
-function backupLocalDb(): string | null {
+async function backupLocalDb(): Promise<string | null> {
   if (!fs.existsSync(DATABASE_PATH)) {
     console.log("No existing local DB to backup.");
     return null;
@@ -29,7 +46,7 @@ function backupLocalDb(): string | null {
   );
 
   const db = new Database(DATABASE_PATH);
-  db.backup(backupPath);
+  await db.backup(backupPath);
   db.close();
 
   console.log(`Local DB backed up: ${backupPath}`);
@@ -111,7 +128,7 @@ function replaceLocalDb(pulledDbPath: string): void {
 async function main() {
   console.log("Starting database pull...\n");
 
-  backupLocalDb();
+  await backupLocalDb();
 
   const pulledBuffer = await pullFromProduction();
 

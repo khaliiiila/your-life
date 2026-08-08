@@ -3,6 +3,23 @@ import path from "node:path";
 import Database from "better-sqlite3";
 
 const ROOT_DIR = path.resolve(import.meta.dirname ?? __dirname, "..");
+
+function loadEnv() {
+  const envPath = path.join(ROOT_DIR, ".env");
+  if (!fs.existsSync(envPath)) return;
+  const content = fs.readFileSync(envPath, "utf-8");
+  for (const line of content.split("\n")) {
+    const trimmed = line.trim();
+    if (!trimmed || trimmed.startsWith("#")) continue;
+    const idx = trimmed.indexOf("=");
+    if (idx === -1) continue;
+    const key = trimmed.slice(0, idx).trim();
+    const val = trimmed.slice(idx + 1).trim().replace(/^["']|["']$/g, "");
+    if (!process.env[key]) process.env[key] = val;
+  }
+}
+loadEnv();
+
 const DATABASE_PATH =
   process.env.DATABASE_PATH ?? path.join(ROOT_DIR, "data", "keuangan.db");
 const BACKUPS_DIR = path.join(ROOT_DIR, "backups");
@@ -18,7 +35,7 @@ function listBackups(): string[] {
     .reverse();
 }
 
-function restoreFromFile(sourcePath: string): void {
+async function restoreFromFile(sourcePath: string): Promise<void> {
   if (!fs.existsSync(sourcePath)) {
     throw new Error(`Backup file not found: ${sourcePath}`);
   }
@@ -51,7 +68,7 @@ function restoreFromFile(sourcePath: string): void {
     fs.mkdirSync(BACKUPS_DIR, { recursive: true });
 
     const currentDb = new Database(DATABASE_PATH);
-    currentDb.backup(preRestoreBackup);
+    await currentDb.backup(preRestoreBackup);
     currentDb.close();
     console.log(`Current DB backed up: ${preRestoreBackup}`);
   }
@@ -60,7 +77,7 @@ function restoreFromFile(sourcePath: string): void {
   console.log(`Restored: ${DATABASE_PATH}`);
 }
 
-function main() {
+async function main() {
   const arg = process.argv[2];
 
   if (!arg || arg === "list") {
@@ -88,7 +105,10 @@ function main() {
     sourcePath = path.isAbsolute(arg) ? arg : path.join(ROOT_DIR, arg);
   }
 
-  restoreFromFile(sourcePath);
+  await restoreFromFile(sourcePath);
 }
 
-main();
+main().catch((err) => {
+  console.error("Restore failed:", err.message);
+  process.exit(1);
+});
