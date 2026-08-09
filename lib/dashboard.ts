@@ -3,6 +3,59 @@ import { db } from "./db";
 type WalletRow = { id: string; name: string; type: string; balance: number };
 type TransactionRow = { id: string; type: string; wallet_name: string; amount: number; category: string; description: string | null; date: string };
 
+function dateKey(d: Date) {
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+}
+
+function shiftMonth(month: string, offset: number) {
+  const [year, monthNum] = month.split("-").map(Number);
+  return dateKey(new Date(Date.UTC(year, monthNum - 1 + offset, 1))).slice(0, 7);
+}
+
+export function getDailyExpenses() {
+  const today = dateKey(new Date());
+  const month = today.slice(0, 7);
+  const lastMonth = shiftMonth(month, -1);
+
+  const todayTotal = (db.prepare(`
+    SELECT COALESCE(SUM(amount), 0) AS total FROM transactions
+    WHERE date = ? AND type = 'expense' AND category <> 'transfer'
+  `).get(today) as { total: number }).total;
+
+  const monthTotal = (db.prepare(`
+    SELECT COALESCE(SUM(amount), 0) AS total FROM transactions
+    WHERE substr(date, 1, 7) = ? AND type = 'expense' AND category <> 'transfer'
+  `).get(month) as { total: number }).total;
+  const monthActiveDays = (db.prepare(`
+    SELECT COUNT(DISTINCT date) AS days FROM transactions
+    WHERE substr(date, 1, 7) = ? AND type = 'expense' AND category <> 'transfer'
+  `).get(month) as { days: number }).days;
+
+  const lastMonthTotal = (db.prepare(`
+    SELECT COALESCE(SUM(amount), 0) AS total FROM transactions
+    WHERE substr(date, 1, 7) = ? AND type = 'expense' AND category <> 'transfer'
+  `).get(lastMonth) as { total: number }).total;
+  const lastMonthActiveDays = (db.prepare(`
+    SELECT COUNT(DISTINCT date) AS days FROM transactions
+    WHERE substr(date, 1, 7) = ? AND type = 'expense' AND category <> 'transfer'
+  `).get(lastMonth) as { days: number }).days;
+
+  const allTotal = (db.prepare(`
+    SELECT COALESCE(SUM(amount), 0) AS total FROM transactions
+    WHERE type = 'expense' AND category <> 'transfer'
+  `).get() as { total: number }).total;
+  const allActiveDays = (db.prepare(`
+    SELECT COUNT(DISTINCT date) AS days FROM transactions
+    WHERE type = 'expense' AND category <> 'transfer'
+  `).get() as { days: number }).days;
+
+  const monthAvg = monthActiveDays > 0 ? Math.round(monthTotal / monthActiveDays) : 0;
+  const lastMonthAvg = lastMonthActiveDays > 0 ? Math.round(lastMonthTotal / lastMonthActiveDays) : 0;
+  const allAvg = allActiveDays > 0 ? Math.round(allTotal / allActiveDays) : 0;
+
+  return { today, todayTotal, monthAvg, lastMonthAvg, allAvg };
+}
+
 export function getBalanceHistory(days = 366) {
   const start = (db.prepare("SELECT COALESCE(SUM(starting_balance), 0) AS s FROM wallets").get() as { s: number }).s;
 
@@ -61,5 +114,6 @@ export function getDashboardData() {
   `).get() as { owed: number; receivable: number };
   const totalBalance = wallets.reduce((sum, wallet) => sum + wallet.balance, 0);
   const netWorth = totalBalance + investments.value + debts.receivable - debts.owed;
-  return { wallets, flow, transactions, upcoming, investments, debts, totalBalance, netWorth, month };
+  const daily = getDailyExpenses();
+  return { wallets, flow, transactions, upcoming, investments, debts, totalBalance, netWorth, month, daily };
 }

@@ -1,4 +1,4 @@
-import { ArrowDownLeft, ArrowUpRight, Bell, CalendarClock, ChevronRight, MoreHorizontal, Plus, Send, WalletCards } from "lucide-react";
+import { ArrowDownLeft, ArrowDownRight, ArrowUpRight, Bell, CalendarClock, ChevronRight, MoreHorizontal, Plus, Send, WalletCards } from "lucide-react";
 import Link from "next/link";
 import { getBalanceHistory, getDashboardData } from "@/lib/dashboard";
 import { compactIdr, formatDate, idr } from "@/lib/formatters";
@@ -26,6 +26,30 @@ export default function Home() {
       <header className="topbar"><MobileNav /><div className="topbar-actions"><button className="icon-button" aria-label="Notifikasi"><Bell size={19} /></button><button className="avatar small" aria-label="Buka profil">K</button></div></header>
       <div className="content">
         <div className="page-heading"><div><p className="eyebrow">{dateLabel}</p><h1>Ringkasan keuangan</h1><p className="muted">Pantau aliran uang dan rencana keuanganmu.</p></div><Link className="button primary" href="/transactions"><Plus size={17} />Tambah transaksi</Link></div>
+        <Card className="daily-expense" id="daily-expense">
+          <div className="card-heading-row"><span className="eyebrow">Pengeluaran hari ini</span></div>
+          <div className="daily-expense-body">
+            <div className="daily-today">
+              <strong className="hero-number">{idr.format(data.daily.todayTotal)}</strong>
+            </div>
+            <div className="daily-compare">
+              <div>
+                <span className={`trend ${data.daily.todayTotal <= data.daily.lastMonthAvg ? "positive" : "negative"}`}>
+                  {data.daily.todayTotal <= data.daily.lastMonthAvg ? <ArrowDownRight size={15} /> : <ArrowUpRight size={15} />}
+                  {data.daily.todayTotal === 0 ? "0%" : `${Math.abs(Math.round(((data.daily.todayTotal - data.daily.lastMonthAvg) / (data.daily.lastMonthAvg || data.daily.todayTotal)) * 100))}%`}
+                </span>
+                <small className="muted">vs rata-rata bulan kemarin <strong>{compactIdr.format(data.daily.lastMonthAvg)}</strong></small>
+              </div>
+              <div>
+                <span className={`trend ${data.daily.todayTotal <= data.daily.allAvg ? "positive" : "negative"}`}>
+                  {data.daily.todayTotal <= data.daily.allAvg ? <ArrowDownRight size={15} /> : <ArrowUpRight size={15} />}
+                  {data.daily.todayTotal === 0 ? "0%" : `${Math.abs(Math.round(((data.daily.todayTotal - data.daily.allAvg) / (data.daily.allAvg || data.daily.todayTotal)) * 100))}%`}
+                </span>
+                <small className="muted">vs rata-rata semua hari <strong>{compactIdr.format(data.daily.allAvg)}</strong></small>
+              </div>
+            </div>
+          </div>
+        </Card>
         <div className="summary-grid">
           <Card className="net-worth"><div className="card-label"><span>Total kekayaan bersih</span><button className="more" aria-label="Opsi kekayaan bersih"><MoreHorizontal size={18} /></button></div><strong className="hero-number">{idr.format(data.netWorth)}</strong><div className="trend positive"><ArrowUpRight size={15} />Saldo + aset + piutang - utang</div><div className="mini-bars"><i style={{ height: "40%" }} /><i style={{ height: "52%" }} /><i style={{ height: "48%" }} /><i style={{ height: "66%" }} /><i style={{ height: "58%" }} /><i style={{ height: "78%" }} /><i style={{ height: "92%" }} /></div></Card>
           <Card><div className="card-label"><span>Arus kas bulan ini</span><span className="date-chip">{monthLabel}</span></div><strong className="stat-number">{idr.format(netFlow)}</strong><div className="flow-legend"><span><i className="dot income" />Masuk {compactIdr.format(data.flow.income)}</span><span><i className="dot expense" />Keluar {compactIdr.format(data.flow.expenses)}</span></div><div className="flow-bar"><i className="income-fill" style={{ width: `${(data.flow.income / maxFlow) * 100}%` }} /><i className="expense-fill" style={{ width: `${(data.flow.expenses / maxFlow) * 100}%` }} /></div></Card>
