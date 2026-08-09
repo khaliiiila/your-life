@@ -1,96 +1,36 @@
-import Database from "better-sqlite3";
-import fs from "node:fs";
-import path from "node:path";
+import { Pool, type PoolClient, type QueryResultRow } from "pg";
 
-const databasePath = process.env.DATABASE_PATH ?? path.join(process.cwd(), "data", "keuangan.db");
+const connectionString = process.env.DATABASE_URL ?? "postgresql://your_life:your_life@127.0.0.1:15433/your_life";
+const globalWithDb = globalThis as typeof globalThis & { financePool?: Pool };
 
-function createDatabase() {
-  fs.mkdirSync(path.dirname(databasePath), { recursive: true });
-  const db = new Database(databasePath);
-  db.pragma("journal_mode = WAL");
-  db.pragma("foreign_keys = ON");
-  db.pragma("busy_timeout = 5000");
-  db.exec("CREATE TABLE IF NOT EXISTS schema_migrations (version INTEGER PRIMARY KEY, applied_at TEXT NOT NULL)");
-  const migrations = [{ version: 1, sql: `
-    CREATE TABLE IF NOT EXISTS wallets (
-      id TEXT PRIMARY KEY, name TEXT NOT NULL, type TEXT NOT NULL DEFAULT 'wallet' CHECK(type IN ('wallet','bank','cash','other')),
-      starting_balance INTEGER NOT NULL DEFAULT 0, currency TEXT NOT NULL DEFAULT 'IDR', note TEXT, created_at TEXT NOT NULL, updated_at TEXT NOT NULL
-    );
-    CREATE TABLE IF NOT EXISTS transfers (
-      id TEXT PRIMARY KEY, source_wallet_id TEXT NOT NULL REFERENCES wallets(id),
-      destination_wallet_id TEXT NOT NULL REFERENCES wallets(id), amount INTEGER NOT NULL,
-      fee INTEGER NOT NULL DEFAULT 0, date TEXT NOT NULL, description TEXT, created_at TEXT NOT NULL
-    );
-    CREATE TABLE IF NOT EXISTS debts (
-      id TEXT PRIMARY KEY, name TEXT NOT NULL, direction TEXT NOT NULL CHECK(direction IN ('owed_by_me','owed_to_me')),
-      principal_amount INTEGER NOT NULL, due_date TEXT, status TEXT NOT NULL DEFAULT 'active', description TEXT, created_at TEXT NOT NULL
-    );
-    CREATE TABLE IF NOT EXISTS debt_payments (
-      id TEXT PRIMARY KEY, debt_id TEXT NOT NULL REFERENCES debts(id), wallet_id TEXT NOT NULL REFERENCES wallets(id),
-      amount INTEGER NOT NULL, date TEXT NOT NULL, note TEXT, transaction_id TEXT, created_at TEXT NOT NULL
-    );
-    CREATE TABLE IF NOT EXISTS assets (
-      id TEXT PRIMARY KEY, name TEXT NOT NULL, category TEXT NOT NULL, asset_type TEXT NOT NULL DEFAULT 'other',
-      quantity REAL NOT NULL DEFAULT 1, purchase_value INTEGER NOT NULL DEFAULT 0, current_value INTEGER NOT NULL DEFAULT 0,
-      valuation_date TEXT, note TEXT, created_at TEXT NOT NULL, updated_at TEXT NOT NULL
-    );
-    CREATE TABLE IF NOT EXISTS upcoming_expenses (
-      id TEXT PRIMARY KEY, name TEXT NOT NULL, amount INTEGER NOT NULL, wallet_id TEXT REFERENCES wallets(id),
-      category TEXT NOT NULL, due_date TEXT NOT NULL, recurrence TEXT NOT NULL DEFAULT 'once', status TEXT NOT NULL DEFAULT 'scheduled',
-      note TEXT, created_at TEXT NOT NULL, updated_at TEXT NOT NULL
-    );
-    CREATE TABLE IF NOT EXISTS transactions (
-      id TEXT PRIMARY KEY,
-      type TEXT NOT NULL CHECK(type IN ('income', 'expense', 'adjustment')),
-      wallet_id TEXT NOT NULL REFERENCES wallets(id),
-      amount INTEGER NOT NULL,
-      category TEXT NOT NULL,
-      description TEXT,
-      date TEXT NOT NULL,
-      created_at TEXT NOT NULL,
-      note TEXT
-    );
-  ` }, { version: 2, sql: `
-    CREATE TABLE IF NOT EXISTS wishlists (
-      id TEXT PRIMARY KEY,
-      name TEXT NOT NULL,
-      target_amount INTEGER NOT NULL,
-      saved_amount INTEGER NOT NULL DEFAULT 0,
-      priority TEXT NOT NULL DEFAULT 'medium' CHECK(priority IN ('low', 'medium', 'high')),
-      target_date TEXT,
-      note TEXT,
-      status TEXT NOT NULL DEFAULT 'active' CHECK(status IN ('active', 'purchased', 'cancelled')),
-      created_at TEXT NOT NULL,
-      updated_at TEXT NOT NULL
-    );
-  ` }, { version: 3, sql: `
-    CREATE TABLE IF NOT EXISTS transactions (
-      id TEXT PRIMARY KEY,
-      type TEXT NOT NULL CHECK(type IN ('income', 'expense', 'adjustment')),
-      wallet_id TEXT NOT NULL REFERENCES wallets(id),
-      amount INTEGER NOT NULL,
-      category TEXT NOT NULL,
-      description TEXT,
-      date TEXT NOT NULL,
-      created_at TEXT NOT NULL,
-      note TEXT
-    );
-  ` }];
-  const apply = db.transaction(() => {
-    for (const migration of migrations) {
-      if (db.prepare("SELECT 1 FROM schema_migrations WHERE version = ?").get(migration.version)) continue;
-      db.exec(migration.sql);
-      db.prepare("INSERT INTO schema_migrations (version, applied_at) VALUES (?, ?)").run(migration.version, new Date().toISOString());
-    }
-  });
-  apply();
-  return db;
+export const db = globalWithDb.financePool ?? new Pool({ connectionString });
+if (process.env.NODE_ENV !== "production") globalWithDb.financePool = db;
+
+export async function query<T extends QueryResultRow = QueryResultRow>(text: string, values: unknown[] = []) {
+  return db.query<T>(text, values);
 }
 
-const globalWithDb = globalThis as typeof globalThis & { financeDb?: Database.Database };
-export const db = globalWithDb.financeDb ?? createDatabase();
-if (process.env.NODE_ENV !== "production") globalWithDb.financeDb = db;
+export async function transaction<T>(run: (client: PoolClient) => Promise<T>) {
+  const client = await db.connect();
+  try {
+    await client.query("BEGIN");
+    const result = await run(client);
+    await client.query("COMMIT");
+    return result;
+  } catch (error) {
+    await client.query("ROLLBACK");
+    throw error;
+  } finally {
+    client.release();
+  }
+}
 
 export function nowIso() {
   return new Date().toISOString();
+}
+
+export function numbers<T extends Record<string, unknown>>(row: T, keys: string[]): T {
+  const mutable = row as Record<string, unknown>;
+  for (const key of keys) if (mutable[key] !== null && mutable[key] !== undefined) mutable[key] = Number(mutable[key]);
+  return row;
 }

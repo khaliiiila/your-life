@@ -1,11 +1,22 @@
-import { autoBackupBeforeMigration } from "./backup-database";
-import "../lib/db";
+import { db } from "../lib/db";
 
-// Auto backup before migration
-const latestBackup = autoBackupBeforeMigration();
+const migrations = [{ version: 1, sql: `
+CREATE TABLE wallets (id TEXT PRIMARY KEY,name TEXT NOT NULL,type TEXT NOT NULL DEFAULT 'cash' CHECK(type IN ('cash','bank','ewallet','credit')),starting_balance BIGINT NOT NULL DEFAULT 0,currency TEXT NOT NULL DEFAULT 'IDR',note TEXT,created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW());
+CREATE TABLE transfers (id TEXT PRIMARY KEY,source_wallet_id TEXT NOT NULL REFERENCES wallets(id),destination_wallet_id TEXT NOT NULL REFERENCES wallets(id),amount BIGINT NOT NULL,fee BIGINT NOT NULL DEFAULT 0 CHECK(fee>=0),date DATE NOT NULL,description TEXT,created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),CHECK(source_wallet_id<>destination_wallet_id));
+CREATE TABLE debts (id TEXT PRIMARY KEY,name TEXT NOT NULL,direction TEXT NOT NULL CHECK(direction IN ('owed_by_me','owed_to_me')),principal_amount BIGINT NOT NULL CHECK(principal_amount>0),due_date DATE,status TEXT NOT NULL DEFAULT 'active' CHECK(status IN ('active','paid','cancelled')),description TEXT,created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW());
+CREATE TABLE assets (id TEXT PRIMARY KEY,name TEXT NOT NULL,category TEXT NOT NULL,asset_type TEXT NOT NULL DEFAULT 'other',quantity NUMERIC NOT NULL DEFAULT 1 CHECK(quantity>0),purchase_value BIGINT NOT NULL DEFAULT 0 CHECK(purchase_value>=0),current_value BIGINT NOT NULL DEFAULT 0 CHECK(current_value>=0),valuation_date DATE,note TEXT,created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW());
+CREATE TABLE upcoming_expenses (id TEXT PRIMARY KEY,name TEXT NOT NULL,amount BIGINT NOT NULL,wallet_id TEXT REFERENCES wallets(id),category TEXT NOT NULL,due_date DATE NOT NULL,recurrence TEXT NOT NULL DEFAULT 'once' CHECK(recurrence IN ('once','weekly','monthly','yearly')),status TEXT NOT NULL DEFAULT 'scheduled' CHECK(status IN ('scheduled','overdue','paid','cancelled')),note TEXT,created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW());
+CREATE TABLE transactions (id TEXT PRIMARY KEY,type TEXT NOT NULL CHECK(type IN ('income','expense','adjustment')),wallet_id TEXT NOT NULL REFERENCES wallets(id),amount BIGINT NOT NULL,category TEXT NOT NULL,description TEXT,date DATE NOT NULL,created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),note TEXT);
+CREATE TABLE debt_payments (id TEXT PRIMARY KEY,debt_id TEXT NOT NULL REFERENCES debts(id),wallet_id TEXT NOT NULL REFERENCES wallets(id),amount BIGINT NOT NULL,date DATE NOT NULL,note TEXT,transaction_id TEXT REFERENCES transactions(id),created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW());
+CREATE TABLE wishlists (id TEXT PRIMARY KEY,name TEXT NOT NULL,target_amount BIGINT NOT NULL CHECK(target_amount>0),saved_amount BIGINT NOT NULL DEFAULT 0 CHECK(saved_amount>=0),priority TEXT NOT NULL DEFAULT 'medium' CHECK(priority IN ('low','medium','high')),target_date DATE,note TEXT,status TEXT NOT NULL DEFAULT 'active' CHECK(status IN ('active','purchased','cancelled')),created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW());
+CREATE INDEX transactions_wallet_date_idx ON transactions(wallet_id,date DESC);
+CREATE INDEX transactions_type_date_idx ON transactions(type,date DESC);
+CREATE INDEX transfers_wallets_idx ON transfers(source_wallet_id,destination_wallet_id);
+CREATE INDEX debt_payments_debt_idx ON debt_payments(debt_id);
+CREATE INDEX upcoming_expenses_status_due_idx ON upcoming_expenses(status,due_date);
+CREATE INDEX debts_status_due_idx ON debts(status,due_date);
+CREATE INDEX wishlists_status_priority_idx ON wishlists(status,priority);
+` }];
 
-if (!latestBackup) {
-  console.log("🔄 New database created (no existing schema).");
-} else {
-  console.log(`✅ Database migrations applied.`);
-}
+async function migrate(){const client=await db.connect();try{await client.query("BEGIN");await client.query("CREATE TABLE IF NOT EXISTS schema_migrations (version INTEGER PRIMARY KEY,applied_at TIMESTAMPTZ NOT NULL DEFAULT NOW())");for(const migration of migrations){if((await client.query("SELECT 1 FROM schema_migrations WHERE version=$1",[migration.version])).rowCount)continue;await client.query(migration.sql);await client.query("INSERT INTO schema_migrations(version) VALUES($1)",[migration.version]);}await client.query("COMMIT");console.log("Database migrations applied.");}catch(error){await client.query("ROLLBACK");throw error;}finally{client.release();await db.end();}}
+migrate().catch((error)=>{console.error(error);process.exitCode=1;});

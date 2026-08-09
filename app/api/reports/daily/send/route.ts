@@ -32,11 +32,11 @@ export async function GET(request: Request) {
     });
     const chatId = url.searchParams.get("chatId") || undefined;
 
-    const data = getDailyReportData(date);
+    const data = await getDailyReportData(date);
     const text = buildDailyReportText(data, target === "yesterday" || target === "auto_morning" ? "Kemarin" : "Hari Ini");
 
     if (target === "auto_morning" && isMorning) {
-      const todayData = getDailyReportData(today);
+      const todayData = await getDailyReportData(today);
       const todayText = buildDailyReportText(todayData, "Hari Ini");
       const combined = `${text}\n\n━━━━━━━━━━━━━━━━━━\n\n<b>📅 Pratinjau Hari Ini (${today})</b>\n\n${todayText}`;
       const result = await sendTelegramMessage(combined, chatId);
@@ -55,11 +55,11 @@ export async function POST(request: Request) {
     const body = await request.json().catch(() => ({}));
     const { target, date, today, isMorning } = resolveTarget({ target: body.target, date: body.date });
     const chatId: string | undefined = body.chatId;
-    const data = getDailyReportData(date);
+    const data = await getDailyReportData(date);
     const text = buildDailyReportText(data, target === "yesterday" || target === "auto_morning" ? "Kemarin" : "Hari Ini");
 
     if (target === "auto_morning") {
-      const todayData = getDailyReportData(today);
+      const todayData = await getDailyReportData(today);
       const todayText = buildDailyReportText(todayData, "Hari Ini");
       const combined = `${text}\n\n━━━━━━━━━━━━━━━━━━\n\n<b>📅 Pratinjau Hari Ini (${today})</b>\n\n${todayText}`;
       const result = await sendTelegramMessage(combined, chatId);

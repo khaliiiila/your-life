@@ -1,23 +1,22 @@
-import { db, nowIso } from "./db";
+import { numbers, query } from "./db";
 import type { Pagination } from "./pagination";
 
-export function listAssets(pagination: Pagination) {
-  const total = (db.prepare("SELECT COUNT(*) AS total FROM assets").get() as { total: number }).total;
-  return { rows: db.prepare("SELECT * FROM assets ORDER BY current_value DESC, name LIMIT ? OFFSET ?").all(pagination.pageSize, pagination.offset), total };
+export async function listAssets(pagination: Pagination) {
+  const total = Number((await query<{ total: string }>("SELECT COUNT(*) AS total FROM assets")).rows[0].total);
+  const rows = (await query("SELECT * FROM assets ORDER BY current_value DESC, name LIMIT $1 OFFSET $2", [pagination.pageSize, pagination.offset])).rows.map((row) => numbers(row, ["quantity", "purchase_value", "current_value"]));
+  return { rows, total };
 }
 
-export function createAsset(input: { name: string; category: string; assetType: string; quantity: number; purchaseValue: number; currentValue: number; valuationDate?: string; note?: string }) {
+export async function createAsset(input: { name: string; category: string; assetType: string; quantity: number; purchaseValue: number; currentValue: number; valuationDate?: string; note?: string }) {
   const id = `asset_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
-  const timestamp = nowIso();
-  db.prepare("INSERT INTO assets (id, name, category, asset_type, quantity, purchase_value, current_value, valuation_date, note, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)").run(id, input.name.trim(), input.category, input.assetType, input.quantity, input.purchaseValue, input.currentValue, input.valuationDate || new Date().toISOString().slice(0, 10), input.note?.trim() || null, timestamp, timestamp);
+  await query("INSERT INTO assets (id, name, category, asset_type, quantity, purchase_value, current_value, valuation_date, note) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9)", [id, input.name.trim(), input.category, input.assetType, input.quantity, input.purchaseValue, input.currentValue, input.valuationDate || new Date().toISOString().slice(0, 10), input.note?.trim() || null]);
   return id;
 }
 
-export function updateAssetValue(id: string, currentValue: number, valuationDate: string) {
-  const result = db.prepare("UPDATE assets SET current_value = ?, valuation_date = ?, updated_at = ? WHERE id = ?").run(currentValue, valuationDate, nowIso(), id);
-  if (!result.changes) throw new Error("Aset tidak ditemukan.");
+export async function updateAssetValue(id: string, currentValue: number, valuationDate: string) {
+  if (!(await query("UPDATE assets SET current_value=$1, valuation_date=$2, updated_at=NOW() WHERE id=$3", [currentValue, valuationDate, id])).rowCount) throw new Error("Aset tidak ditemukan.");
 }
 
-export function deleteAsset(id: string) {
-  if (!db.prepare("DELETE FROM assets WHERE id = ?").run(id).changes) throw new Error("Aset tidak ditemukan.");
+export async function deleteAsset(id: string) {
+  if (!(await query("DELETE FROM assets WHERE id=$1", [id])).rowCount) throw new Error("Aset tidak ditemukan.");
 }

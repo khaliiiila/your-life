@@ -1,13 +1,30 @@
 services:
+  db:
+    image: postgres:17-alpine
+    ports:
+      - "127.0.0.1:${POSTGRES_HOST_PORT:-15433}:5432"
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-your_life}
+      POSTGRES_USER: ${POSTGRES_USER:-your_life}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-your_life}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    restart: unless-stopped
+
   app:
     build:
       context: .
       dockerfile: Dockerfile
       target: deps
     ports:
-      - "${APP_PORT:-3001}:3000"
+      - "${APP_PORT:-13003}:3000"
     environment:
-      DATABASE_PATH: /data/keuangan.db
+      DATABASE_URL: postgresql://${POSTGRES_USER:-your_life}:${POSTGRES_PASSWORD:-your_life}@db:5432/${POSTGRES_DB:-your_life}
       NODE_ENV: development
       HOSTNAME: 0.0.0.0
       WATCHPACK_POLLING: "true"
@@ -18,14 +35,16 @@ services:
     volumes:
       - .:/app
       - node_modules:/app/node_modules
-      - ./data:/data
+    depends_on:
+      db:
+        condition: service_healthy
     command: sh -c "npm run db:migrate && npm run dev -- --hostname 0.0.0.0"
-    restart: unless-stopped
     healthcheck:
       test: ["CMD", "wget", "--spider", "-q", "http://127.0.0.1:3000/api/health"]
       interval: 10s
       timeout: 5s
-      retries: 3
+      retries: 5
+    restart: unless-stopped
 
   scheduler:
     build:
@@ -48,12 +67,6 @@ services:
       crond -f -l 2"
     restart: unless-stopped
 
-networks:
-  default:
-    driver: bridge
-    ipam:
-      config:
-        - subnet: 172.40.0.0/16
-
 volumes:
   node_modules:
+  postgres_data:

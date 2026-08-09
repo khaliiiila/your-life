@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 
-export function GET() {
+export async function GET() {
   const paginationParameters = [
     { name: "page", in: "query", schema: { type: "integer", minimum: 1, default: 1 } },
     { name: "pageSize", in: "query", schema: { type: "integer", minimum: 1, maximum: 100, default: 20 } },

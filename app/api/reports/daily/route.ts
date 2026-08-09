@@ -3,7 +3,7 @@ import { buildDailyReportText, dateInWib, getDailyReportData, shiftDate } from "
 
 export const dynamic = "force-dynamic";
 
-export function GET(request: Request) {
+export async function GET(request: Request) {
   const url = new URL(request.url);
   const today = dateInWib();
 
@@ -16,26 +16,26 @@ export function GET(request: Request) {
   const explicitDate = url.searchParams.get("date");
 
   if (explicitDate) {
-    const data = getDailyReportData(explicitDate);
+    const data = await getDailyReportData(explicitDate);
     return NextResponse.json({ date: explicitDate, target: "date", text: buildDailyReportText(data), data });
   }
 
   if (target === "today") {
-    const data = getDailyReportData(today);
+    const data = await getDailyReportData(today);
     return NextResponse.json({ date: today, target, text: buildDailyReportText(data), data });
   }
 
   if (target === "yesterday") {
     const yesterday = shiftDate(today, -1);
-    const data = getDailyReportData(yesterday);
+    const data = await getDailyReportData(yesterday);
     return NextResponse.json({ date: yesterday, target, text: buildDailyReportText(data, "Kemarin"), data });
   }
 
   // auto: sertakan kemarin jika sebelum jam 12 siang
   if (isMorning) {
     const yesterday = shiftDate(today, -1);
-    const dataToday = getDailyReportData(today);
-    const dataYesterday = getDailyReportData(yesterday);
+    const dataToday = await getDailyReportData(today);
+    const dataYesterday = await getDailyReportData(yesterday);
     return NextResponse.json({
       target: "auto_morning",
       isMorning: true,
@@ -44,6 +44,6 @@ export function GET(request: Request) {
     });
   }
 
-  const data = getDailyReportData(today);
+  const data = await getDailyReportData(today);
   return NextResponse.json({ date: today, target: "auto_evening", isMorning: false, text: buildDailyReportText(data), data });
 }

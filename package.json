@@ -9,15 +9,16 @@
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
     "db:migrate": "tsx scripts/migrate.ts",
-    "db:backup": "tsx scripts/backup-database.ts backup",
-    "db:pull": "tsx scripts/pull-db.ts",
-    "db:restore": "tsx scripts/restore-database.ts",
+    "db:import-sqlite": "tsx scripts/migrate-sqlite-to-pg.ts",
+    "db:backup": "sh -c 'mkdir -p data/backups && pg_dump \"$DATABASE_URL\" -Fc -f data/backups/your-life-$(date +%Y%m%d-%H%M%S).dump'",
+    "db:pull": "node -e \"console.error('db:pull unsupported for PostgreSQL'); process.exit(1)\"",
+    "db:restore": "sh -c 'test -n \"$1\" && pg_restore --clean --if-exists --no-owner -d \"$DATABASE_URL\" \"$1\"' --",
     "check:finance": "tsx scripts/check-finance.ts"
   },
   "dependencies": {
-    "better-sqlite3": "^13.0.2",
     "lucide-react": "^0.468.0",
     "next": "^16.3.0",
+    "pg": "^8.23.0",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
     "recharts": "^3.10.1"
@@ -25,8 +26,10 @@
   "devDependencies": {
     "@types/better-sqlite3": "^7.6.13",
     "@types/node": "^22.10.2",
+    "@types/pg": "^8.21.0",
     "@types/react": "^19.0.2",
     "@types/react-dom": "^19.0.2",
+    "better-sqlite3": "^13.0.3",
     "eslint": "^9.17.0",
     "eslint-config-next": "^16.3.0",
     "tsx": "^4.19.2",

@@ -1,4 +1,4 @@
-import { db } from "./db";
+import { numbers, query } from "./db";
 
 const categoryEmoji: Record<string, string> = {
   makanan: "🍽️", transport: "🚗", tagihan: "🛍️", kos: "🏠",
@@ -61,52 +61,15 @@ export type DailyReportData = {
   debts: DebtRow[];
 };
 
-export function getDailyReportData(date: string): DailyReportData {
-  const expenses = db.prepare(`
-    SELECT t.description, t.category, t.amount
-    FROM transactions t
-    WHERE t.date = ? AND t.type = 'expense' AND t.category <> 'transfer'
-    ORDER BY t.created_at ASC
-  `).all(date) as ExpenseRow[];
-
-  const month = date.slice(0, 7);
-  const monthTotal = (db.prepare(
-    `SELECT COALESCE(SUM(amount),0) AS total FROM transactions WHERE substr(date,1,7) = ? AND type = 'expense' AND category <> 'transfer'`
-  ).get(month) as { total: number }).total;
-
-  const monthActiveDays = (db.prepare(
-    `SELECT COUNT(DISTINCT date) AS days FROM transactions WHERE substr(date,1,7) = ? AND type = 'expense' AND category <> 'transfer'`
-  ).get(month) as { days: number }).days;
-  const monthAvg = monthActiveDays > 0 ? Math.round(monthTotal / monthActiveDays) : 0;
-
-  const lastMonth = shiftMonth(month, -1);
-  const lastMonthTotal = (db.prepare(
-    `SELECT COALESCE(SUM(amount),0) AS total FROM transactions WHERE substr(date,1,7) = ? AND type = 'expense' AND category <> 'transfer'`
-  ).get(lastMonth) as { total: number }).total;
-
-  const lastMonthActiveDays = (db.prepare(
-    `SELECT COUNT(DISTINCT date) AS days FROM transactions WHERE substr(date,1,7) = ? AND type = 'expense' AND category <> 'transfer'`
-  ).get(lastMonth) as { days: number }).days;
-  const lastMonthAvg = lastMonthActiveDays > 0 ? Math.round(lastMonthTotal / lastMonthActiveDays) : 0;
-
-  const yesterdayDate = shiftDate(date, -1);
-  const yesterdayTotal = (db.prepare(
-    `SELECT COALESCE(SUM(amount),0) AS total FROM transactions WHERE date = ? AND type = 'expense' AND category <> 'transfer'`
-  ).get(yesterdayDate) as { total: number }).total;
-
-  const lastWeekDate = shiftDate(date, -7);
-  const lastWeekTotal = (db.prepare(
-    `SELECT COALESCE(SUM(amount),0) AS total FROM transactions WHERE date = ? AND type = 'expense' AND category <> 'transfer'`
-  ).get(lastWeekDate) as { total: number }).total;
-
-  const debts = db.prepare(`
-    SELECT d.name, d.principal_amount - COALESCE(SUM(p.amount), 0) AS remaining
-    FROM debts d LEFT JOIN debt_payments p ON p.debt_id = d.id
-    WHERE d.status = 'active' GROUP BY d.id HAVING remaining > 0 ORDER BY remaining DESC
-  `).all() as DebtRow[];
-
-  const total = expenses.reduce((sum, e) => sum + e.amount, 0);
-  return { date, total, expenses, yesterdayTotal, lastWeekTotal, monthTotal, monthActiveDays, monthAvg, lastMonthTotal, lastMonthActiveDays, lastMonthAvg, debts };
+export async function getDailyReportData(date: string): Promise<DailyReportData> {
+  const month = date.slice(0, 7), lastMonth = shiftMonth(month, -1), yesterday = shiftDate(date, -1), lastWeek = shiftDate(date, -7);
+  const [expenseResult, summaryResult, debtResult] = await Promise.all([
+    query<ExpenseRow>("SELECT description,category,amount FROM transactions WHERE date=$1 AND type='expense' AND category<>'transfer' ORDER BY created_at", [date]),
+    query<{ month_total:string; month_days:string; last_total:string; last_days:string; yesterday:string; last_week:string }>(`SELECT COALESCE(SUM(amount) FILTER (WHERE to_char(date,'YYYY-MM')=$1),0) month_total,COUNT(DISTINCT date) FILTER (WHERE to_char(date,'YYYY-MM')=$1) month_days,COALESCE(SUM(amount) FILTER (WHERE to_char(date,'YYYY-MM')=$2),0) last_total,COUNT(DISTINCT date) FILTER (WHERE to_char(date,'YYYY-MM')=$2) last_days,COALESCE(SUM(amount) FILTER (WHERE date=$3),0) yesterday,COALESCE(SUM(amount) FILTER (WHERE date=$4),0) last_week FROM transactions WHERE type='expense' AND category<>'transfer'`, [month,lastMonth,yesterday,lastWeek]),
+    query<DebtRow>("SELECT d.name,d.principal_amount-COALESCE(SUM(p.amount),0) remaining FROM debts d LEFT JOIN debt_payments p ON p.debt_id=d.id WHERE d.status='active' GROUP BY d.id HAVING d.principal_amount-COALESCE(SUM(p.amount),0)>0 ORDER BY remaining DESC")
+  ]);
+  const expenses=expenseResult.rows.map(row=>numbers(row,["amount"])); const summary=summaryResult.rows[0]; const monthTotal=Number(summary.month_total),monthActiveDays=Number(summary.month_days),lastMonthTotal=Number(summary.last_total),lastMonthActiveDays=Number(summary.last_days); const debts=debtResult.rows.map(row=>numbers(row,["remaining"]));
+  return {date,total:expenses.reduce((sum,e)=>sum+e.amount,0),expenses,yesterdayTotal:Number(summary.yesterday),lastWeekTotal:Number(summary.last_week),monthTotal,monthActiveDays,monthAvg:monthActiveDays?Math.round(monthTotal/monthActiveDays):0,lastMonthTotal,lastMonthActiveDays,lastMonthAvg:lastMonthActiveDays?Math.round(lastMonthTotal/lastMonthActiveDays):0,debts};
 }
 
 export function buildDailyReportText(data: DailyReportData, periodLabel = "Hari Ini") {
