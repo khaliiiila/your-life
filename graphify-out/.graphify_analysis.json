@@ -1,0 +1,594 @@
+{
+  "communities": {
+    "0": [
+      "app_assets_assets_workspace",
+      "app_assets_assets_workspace_asset",
+      "app_assets_assets_workspace_assetsworkspace",
+      "app_assets_assets_workspace_blank",
+      "app_assets_assets_workspace_field",
+      "app_assets_page",
+      "app_assets_page_assetspage",
+      "app_assets_page_dynamic",
+      "app_debts_debts_workspace",
+      "app_debts_debts_workspace_blankdebt",
+      "app_debts_debts_workspace_debt",
+      "app_debts_debts_workspace_debtsworkspace",
+      "app_debts_debts_workspace_field",
+      "app_debts_debts_workspace_wallet",
+      "app_debts_page",
+      "app_debts_page_debtspage",
+      "app_debts_page_dynamic",
+      "app_page",
+      "app_page_card",
+      "app_page_dynamic",
+      "app_page_home",
+      "app_transactions_page",
+      "app_transactions_page_dynamic",
+      "app_transactions_page_transactionspage",
+      "app_transactions_transactions_workspace",
+      "app_transactions_transactions_workspace_categories",
+      "app_transactions_transactions_workspace_field",
+      "app_transactions_transactions_workspace_initialform",
+      "app_transactions_transactions_workspace_transaction",
+      "app_transactions_transactions_workspace_transactionsworkspace",
+      "app_transactions_transactions_workspace_wallet",
+      "app_upcoming_page",
+      "app_upcoming_page_dynamic",
+      "app_upcoming_page_upcomingpage",
+      "app_upcoming_upcoming_workspace",
+      "app_upcoming_upcoming_workspace_blankform",
+      "app_upcoming_upcoming_workspace_categories",
+      "app_upcoming_upcoming_workspace_expense",
+      "app_upcoming_upcoming_workspace_field",
+      "app_upcoming_upcoming_workspace_upcomingworkspace",
+      "app_upcoming_upcoming_workspace_wallet",
+      "app_wallets_page",
+      "app_wallets_page_dynamic",
+      "app_wallets_page_walletspage",
+      "app_wallets_wallets_workspace",
+      "app_wallets_wallets_workspace_blank",
+      "app_wallets_wallets_workspace_field",
+      "app_wallets_wallets_workspace_wallet",
+      "app_wallets_wallets_workspace_walletsworkspace",
+      "app_wishlists_page",
+      "app_wishlists_page_dynamic",
+      "app_wishlists_page_wishlistspage",
+      "app_wishlists_wishlists_workspace",
+      "app_wishlists_wishlists_workspace_blank",
+      "app_wishlists_wishlists_workspace_field",
+      "app_wishlists_wishlists_workspace_wishlist",
+      "app_wishlists_wishlists_workspace_wishlistsworkspace",
+      "components_app_nav",
+      "components_app_nav_appnav",
+      "components_mobile_nav",
+      "components_mobile_nav_links",
+      "components_mobile_nav_mobilenav",
+      "components_toast",
+      "components_toast_toastcontainer",
+      "components_toast_toastmessage",
+      "components_toast_toasttype",
+      "components_toast_usetoast",
+      "lib_formatters",
+      "lib_formatters_compactidr",
+      "lib_formatters_formatdate",
+      "lib_formatters_idr"
+    ],
+    "1": [
+      "better_sqlite3",
+      "lucide_react",
+      "next",
+      "package",
+      "package_dependencies",
+      "package_dependencies_better_sqlite3",
+      "package_dependencies_lucide_react",
+      "package_dependencies_next",
+      "package_dependencies_react",
+      "package_dependencies_react_dom",
+      "package_dependencies_recharts",
+      "package_name",
+      "package_private",
+      "package_scripts",
+      "package_scripts_build",
+      "package_scripts_check_finance",
+      "package_scripts_db_backup",
+      "package_scripts_db_migrate",
+      "package_scripts_db_pull",
+      "package_scripts_db_restore",
+      "package_scripts_dev",
+      "package_scripts_lint",
+      "package_scripts_start",
+      "package_scripts_typecheck",
+      "package_version",
+      "react",
+      "react_dom",
+      "recharts"
+    ],
+    "2": [
+      "ref_dom",
+      "ref_dom_iterable",
+      "ref_esnext",
+      "ref_next_dev_types_ts",
+      "ref_next_env_d_ts",
+      "ref_next_types_ts",
+      "ref_node_modules",
+      "ref_ts",
+      "ref_tsx",
+      "tsconfig",
+      "tsconfig_compileroptions",
+      "tsconfig_compileroptions_allowjs",
+      "tsconfig_compileroptions_baseurl",
+      "tsconfig_compileroptions_esmoduleinterop",
+      "tsconfig_compileroptions_incremental",
+      "tsconfig_compileroptions_isolatedmodules",
+      "tsconfig_compileroptions_jsx",
+      "tsconfig_compileroptions_lib",
+      "tsconfig_compileroptions_module",
+      "tsconfig_compileroptions_moduleresolution",
+      "tsconfig_compileroptions_noemit",
+      "tsconfig_compileroptions_paths",
+      "tsconfig_compileroptions_plugins",
+      "tsconfig_compileroptions_resolvejsonmodule",
+      "tsconfig_compileroptions_skiplibcheck",
+      "tsconfig_compileroptions_strict",
+      "tsconfig_compileroptions_target",
+      "tsconfig_exclude",
+      "tsconfig_include"
+    ],
+    "3": [
+      "eslint",
+      "eslint_config_next",
+      "package_devdependencies",
+      "package_devdependencies_eslint",
+      "package_devdependencies_eslint_config_next",
+      "package_devdependencies_tsx",
+      "package_devdependencies_types_better_sqlite3",
+      "package_devdependencies_types_node",
+      "package_devdependencies_types_react",
+      "package_devdependencies_types_react_dom",
+      "package_devdependencies_typescript",
+      "tsx",
+      "types_better_sqlite3",
+      "types_node",
+      "types_react",
+      "types_react_dom",
+      "typescript"
+    ],
+    "4": [
+      "app_api_dashboard_route",
+      "app_api_dashboard_route_get",
+      "lib_dashboard",
+      "lib_dashboard_getdashboarddata",
+      "lib_dashboard_transactionrow",
+      "lib_dashboard_walletrow",
+      "scripts_check_finance",
+      "scripts_check_finance_before",
+      "scripts_check_finance_createdat"
+    ],
+    "5": [
+      "app_api_transactions_id_route",
+      "app_api_transactions_id_route_delete",
+      "app_api_transactions_id_route_get",
+      "app_api_transactions_id_route_patch",
+      "app_api_upcoming_expenses_id_route",
+      "app_api_upcoming_expenses_id_route_context",
+      "app_api_upcoming_expenses_id_route_delete",
+      "app_api_upcoming_expenses_id_route_patch",
+      "app_api_upcoming_expenses_id_route_post",
+      "app_api_upcoming_expenses_route",
+      "app_api_upcoming_expenses_route_dynamic",
+      "app_api_upcoming_expenses_route_get",
+      "app_api_upcoming_expenses_route_post",
+      "lib_db_nowiso",
+      "lib_upcoming_expenses",
+      "lib_upcoming_expenses_createupcomingexpense",
+      "lib_upcoming_expenses_deleteupcomingexpense",
+      "lib_upcoming_expenses_listupcomingexpenses",
+      "lib_upcoming_expenses_payupcomingexpense",
+      "lib_upcoming_expenses_upcomingexpenseinput",
+      "lib_upcoming_expenses_updateupcomingexpense",
+      "lib_upcoming_expenses_updateupcomingstatuses"
+    ],
+    "6": [
+      "app_api_admin_db_export_route",
+      "app_api_admin_db_export_route_get",
+      "app_api_debts_id_payments_route",
+      "app_api_debts_id_payments_route_post",
+      "app_api_debts_id_route",
+      "app_api_debts_id_route_context",
+      "app_api_debts_id_route_delete",
+      "app_api_debts_id_route_patch",
+      "app_api_debts_route",
+      "app_api_debts_route_dynamic",
+      "app_api_debts_route_get",
+      "app_api_debts_route_post",
+      "app_api_health_route",
+      "app_api_health_route_get",
+      "app_api_transactions_route",
+      "app_api_transactions_route_dynamic",
+      "app_api_transactions_route_get",
+      "app_api_transactions_route_post",
+      "app_api_transfers_route",
+      "app_api_transfers_route_post",
+      "app_api_wallets_id_route",
+      "app_api_wallets_id_route_context",
+      "app_api_wallets_id_route_delete",
+      "app_api_wallets_id_route_patch",
+      "app_api_wallets_route",
+      "app_api_wallets_route_dynamic",
+      "app_api_wallets_route_get",
+      "app_api_wallets_route_post",
+      "app_api_wishlists_route",
+      "app_api_wishlists_route_dynamic",
+      "app_api_wishlists_route_get",
+      "app_api_wishlists_route_post",
+      "lib_db",
+      "lib_db_createdatabase",
+      "lib_db_db",
+      "lib_db_globalwithdb",
+      "lib_debts",
+      "lib_debts_createdebt",
+      "lib_debts_listdebts",
+      "lib_debts_paydebt",
+      "lib_pagination",
+      "lib_pagination_pagination",
+      "lib_pagination_paginationmeta",
+      "lib_pagination_parsepagination",
+      "lib_transactions",
+      "lib_transactions_createtransaction",
+      "lib_transactions_createtransfer",
+      "lib_transactions_listtransactions",
+      "lib_transactions_transactioninput",
+      "lib_transactions_transferinput",
+      "lib_wishlists",
+      "lib_wishlists_createwishlist",
+      "lib_wishlists_listwishlists"
+    ],
+    "7": [
+      "app_api_reports_daily_route",
+      "app_api_reports_daily_route_dynamic",
+      "app_api_reports_daily_route_get",
+      "app_api_reports_daily_send_route",
+      "app_api_reports_daily_send_route_get",
+      "app_api_reports_daily_send_route_post",
+      "app_api_reports_daily_send_route_resolvetarget",
+      "app_api_telegram_send_route",
+      "app_api_telegram_send_route_post",
+      "lib_reports",
+      "lib_reports_builddailyreporttext",
+      "lib_reports_categoryemoji",
+      "lib_reports_comparison",
+      "lib_reports_dailyreportdata",
+      "lib_reports_dateinwib",
+      "lib_reports_debtrow",
+      "lib_reports_escapehtml",
+      "lib_reports_expenserow",
+      "lib_reports_formatrp",
+      "lib_reports_getdailyreportdata",
+      "lib_reports_shiftdate",
+      "lib_reports_shiftmonth",
+      "lib_reports_shortdate",
+      "lib_telegram",
+      "lib_telegram_sendtelegrammessage"
+    ],
+    "8": [
+      "docker_compose_app",
+      "docker_compose_app_database_path",
+      "docker_compose_data_bind_mount",
+      "docker_compose_db_migrate",
+      "docker_compose_deps_target",
+      "docker_compose_dev_server",
+      "docker_compose_healthcheck",
+      "docker_compose_host_data_persistence",
+      "docker_compose_nextjs",
+      "docker_compose_node_modules_volume",
+      "docker_compose_startup_sequence"
+    ],
+    "9": [
+      "app_api_assets_id_route",
+      "app_api_assets_id_route_context",
+      "app_api_assets_id_route_delete",
+      "app_api_assets_id_route_patch",
+      "app_api_assets_route",
+      "app_api_assets_route_dynamic",
+      "app_api_assets_route_get",
+      "app_api_assets_route_post",
+      "lib_assets",
+      "lib_assets_createasset",
+      "lib_assets_deleteasset",
+      "lib_assets_listassets",
+      "lib_assets_updateassetvalue"
+    ],
+    "10": [
+      "opencode_opencode",
+      "opencode_opencode_plugin",
+      "opencode_opencode_schema",
+      "ref_opencode_plugins_graphify_js"
+    ],
+    "11": [
+      "app_layout",
+      "app_layout_metadata",
+      "app_layout_rootlayout"
+    ],
+    "12": [
+      "opencode_plugins_graphify",
+      "opencode_plugins_graphify_graphifyplugin",
+      "opencode_plugins_graphify_rationale_4"
+    ],
+    "13": [
+      "next_config",
+      "next_config_nextconfig"
+    ],
+    "14": [
+      "next_env_d",
+      "next_env_d_rationale_6"
+    ],
+    "15": [
+      "eslint_config"
+    ],
+    "16": [
+      "api",
+      "api_ai_routes",
+      "api_api_untuk_ai_agent",
+      "api_authentication",
+      "api_contoh",
+      "api_db_sync_cloning_production_dev",
+      "api_environment_variabel_telegram",
+      "api_laporan_otomatis",
+      "api_lokal_dev",
+      "api_pagination",
+      "api_restore_dari_backup",
+      "api_server_production"
+    ],
+    "17": [
+      "scripts_backup_database",
+      "scripts_backup_database_autobackupbeforemigration",
+      "scripts_backup_database_createbackup",
+      "scripts_backup_database_dirname",
+      "scripts_backup_database_filename",
+      "scripts_backup_database_getlatestbackup",
+      "scripts_backup_database_listbackups",
+      "scripts_backup_database_rootdir",
+      "scripts_migrate",
+      "scripts_migrate_latestbackup"
+    ],
+    "18": [
+      "scripts_pull_db",
+      "scripts_pull_db_backuplocaldb",
+      "scripts_pull_db_backups_dir",
+      "scripts_pull_db_main",
+      "scripts_pull_db_pullfromproduction",
+      "scripts_pull_db_replacelocaldb",
+      "scripts_pull_db_root_dir",
+      "scripts_pull_db_verifydatabase"
+    ],
+    "19": [
+      "components_error_boundary",
+      "components_error_boundary_errorboundary",
+      "components_error_boundary_errorboundary_constructor",
+      "components_error_boundary_errorboundary_getderivedstatefromerror",
+      "components_error_boundary_errorboundary_handleretry",
+      "components_error_boundary_errorboundary_render",
+      "components_error_boundary_witherrorboundary"
+    ],
+    "20": [
+      "app_api_wishlists_id_route",
+      "app_api_wishlists_id_route_context",
+      "app_api_wishlists_id_route_delete",
+      "app_api_wishlists_id_route_patch",
+      "lib_wishlists_deletewishlist",
+      "lib_wishlists_updatewishlist"
+    ],
+    "21": [
+      "scripts_restore_database",
+      "scripts_restore_database_backups_dir",
+      "scripts_restore_database_listbackups",
+      "scripts_restore_database_main",
+      "scripts_restore_database_restorefromfile",
+      "scripts_restore_database_root_dir"
+    ],
+    "22": [
+      "components_skeleton",
+      "components_skeleton_cardskeleton",
+      "components_skeleton_gridskeleton",
+      "components_skeleton_listskeleton",
+      "components_skeleton_transactionrowskeleton"
+    ],
+    "23": [
+      "improvements",
+      "improvements_berikutnya",
+      "improvements_improvements"
+    ],
+    "24": [
+      "proxy",
+      "proxy_config",
+      "proxy_proxy"
+    ],
+    "25": [
+      "app_api_docs_openapi_json_route",
+      "app_api_docs_openapi_json_route_get"
+    ],
+    "26": [
+      "scripts_create_wallets",
+      "scripts_create_wallets_db"
+    ],
+    "27": [
+      "scripts_send_scheduled_report"
+    ]
+  },
+  "cohesion": {
+    "0": 0.055130784708249496,
+    "1": 0.07142857142857142,
+    "2": 0.06896551724137931,
+    "3": 0.11764705882352941,
+    "4": 0.3055555555555556,
+    "5": 0.15584415584415584,
+    "6": 0.07329462989840348,
+    "7": 0.19,
+    "8": 0.2545454545454545,
+    "9": 0.2564102564102564,
+    "10": 0.5,
+    "11": 0.6666666666666666,
+    "12": 0.6666666666666666,
+    "13": 1.0,
+    "14": 1.0,
+    "15": 1.0,
+    "16": 0.16666666666666666,
+    "17": 0.28888888888888886,
+    "18": 0.39285714285714285,
+    "19": 0.2857142857142857,
+    "20": 0.4666666666666667,
+    "21": 0.4666666666666667,
+    "22": 0.4,
+    "23": 0.6666666666666666,
+    "24": 0.6666666666666666,
+    "25": 1.0,
+    "26": 1.0,
+    "27": 1.0
+  },
+  "gods": [
+    {
+      "id": "tsconfig_compileroptions",
+      "label": "compilerOptions",
+      "degree": 17
+    },
+    {
+      "id": "lib_db_nowiso",
+      "label": "nowIso()",
+      "degree": 16
+    },
+    {
+      "id": "lib_db_db",
+      "label": "db",
+      "degree": 15
+    },
+    {
+      "id": "components_toast_usetoast",
+      "label": "useToast()",
+      "degree": 13
+    },
+    {
+      "id": "lib_pagination_parsepagination",
+      "label": "parsePagination()",
+      "degree": 13
+    },
+    {
+      "id": "lib_pagination_paginationmeta",
+      "label": "paginationMeta()",
+      "degree": 13
+    },
+    {
+      "id": "package_scripts",
+      "label": "scripts",
+      "degree": 11
+    },
+    {
+      "id": "lib_reports_builddailyreporttext",
+      "label": "buildDailyReportText()",
+      "degree": 10
+    },
+    {
+      "id": "lib_formatters_idr",
+      "label": "idr",
+      "degree": 9
+    },
+    {
+      "id": "components_app_nav_appnav",
+      "label": "AppNav()",
+      "degree": 8
+    }
+  ],
+  "surprises": [
+    {
+      "source": "GET()",
+      "target": "paginationMeta()",
+      "source_files": [
+        "app/api/assets/route.ts",
+        "lib/pagination.ts"
+      ],
+      "confidence": "EXTRACTED",
+      "relation": "calls",
+      "why": "connects across different repos/directories; bridges separate communities"
+    },
+    {
+      "source": "GET()",
+      "target": "parsePagination()",
+      "source_files": [
+        "app/api/assets/route.ts",
+        "lib/pagination.ts"
+      ],
+      "confidence": "EXTRACTED",
+      "relation": "calls",
+      "why": "connects across different repos/directories; bridges separate communities"
+    },
+    {
+      "source": "GET()",
+      "target": "getDashboardData()",
+      "source_files": [
+        "app/api/dashboard/route.ts",
+        "lib/dashboard.ts"
+      ],
+      "confidence": "EXTRACTED",
+      "relation": "calls",
+      "why": "connects across different repos/directories; peripheral node `GET()` unexpectedly reaches hub `getDashboardData()`"
+    },
+    {
+      "source": "POST()",
+      "target": "sendTelegramMessage()",
+      "source_files": [
+        "app/api/telegram/send/route.ts",
+        "lib/telegram.ts"
+      ],
+      "confidence": "EXTRACTED",
+      "relation": "calls",
+      "why": "connects across different repos/directories; peripheral node `POST()` unexpectedly reaches hub `sendTelegramMessage()`"
+    },
+    {
+      "source": "GET()",
+      "target": "paginationMeta()",
+      "source_files": [
+        "app/api/upcoming-expenses/route.ts",
+        "lib/pagination.ts"
+      ],
+      "confidence": "EXTRACTED",
+      "relation": "calls",
+      "why": "connects across different repos/directories; bridges separate communities"
+    }
+  ],
+  "questions": [
+    {
+      "type": "bridge_node",
+      "question": "Why does `db` connect `db.ts` to `assets.ts`, `dashboard.ts`, `nowIso`, `reports.ts`?",
+      "why": "High betweenness centrality (0.078) - this node is a cross-community bridge."
+    },
+    {
+      "type": "bridge_node",
+      "question": "Why does `idr` connect `transactions-workspace.tsx` to `nowIso`?",
+      "why": "High betweenness centrality (0.056) - this node is a cross-community bridge."
+    },
+    {
+      "type": "bridge_node",
+      "question": "Why does `nowIso()` connect `nowIso` to `assets.ts`, `wishlists/[id]/route.ts`, `db.ts`?",
+      "why": "High betweenness centrality (0.053) - this node is a cross-community bridge."
+    },
+    {
+      "type": "isolated_nodes",
+      "question": "What connects `$schema`, `.opencode/plugins/graphify.js`, `Context` to the rest of the system?",
+      "why": "130 weakly-connected nodes found - possible documentation gaps or missing edges."
+    },
+    {
+      "type": "low_cohesion",
+      "question": "Should `transactions-workspace.tsx` be split into smaller, more focused modules?",
+      "why": "Cohesion score 0.055130784708249496 - nodes in this community are weakly interconnected."
+    },
+    {
+      "type": "low_cohesion",
+      "question": "Should `scripts` be split into smaller, more focused modules?",
+      "why": "Cohesion score 0.07142857142857142 - nodes in this community are weakly interconnected."
+    },
+    {
+      "type": "low_cohesion",
+      "question": "Should `compilerOptions` be split into smaller, more focused modules?",
+      "why": "Cohesion score 0.06896551724137931 - nodes in this community are weakly interconnected."
+    }
+  ]
+}
