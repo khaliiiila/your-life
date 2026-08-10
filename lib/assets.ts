@@ -4,7 +4,8 @@ import type { Pagination } from "./pagination";
 export async function listAssets(pagination: Pagination) {
   const total = Number((await query<{ total: string }>("SELECT COUNT(*) AS total FROM assets")).rows[0].total);
   const rows = (await query("SELECT * FROM assets ORDER BY current_value DESC, name LIMIT $1 OFFSET $2", [pagination.pageSize, pagination.offset])).rows.map((row) => numbers(row, ["quantity", "purchase_value", "current_value"]));
-  return { rows, total };
+  const summary = numbers((await query<{ value: string; gain: string; count: string }>("SELECT COALESCE(SUM(current_value),0) value,COALESCE(SUM(current_value-purchase_value),0) gain,COUNT(*) count FROM assets")).rows[0], ["value", "gain", "count"]);
+  return { rows, total, summary };
 }
 
 export async function createAsset(input: { name: string; category: string; assetType: string; quantity: number; purchaseValue: number; currentValue: number; valuationDate?: string; note?: string }) {

@@ -5,11 +5,13 @@ import { FormEvent, useEffect, useRef, useState } from "react";
 import { formatDate, idr } from "@/lib/formatters";
 import { MobileNav } from "@/components/mobile-nav";
 import { ToastContainer, useToast } from "@/components/toast";
+import { PaginationBar } from "@/components/pagination";
 
 type Wallet = { id: string; name: string; type: string };
 type Transaction = { id: string; type: string; wallet_id: string; wallet_name: string; amount: number; category: string; description: string | null; date: string };
 const categories = ["makanan", "transport", "tagihan", "kos", "family", "donasi", "gaji", "kesehatan", "hiburan", "investasi", "lainnya"];
 const initialForm = { type: "expense", walletId: "", amount: "", category: "makanan", description: "", date: new Date().toISOString().slice(0, 10), note: "" };
+const PAGE_SIZE = 20;
 
 export function TransactionsWorkspace() {
   const { toasts, addToast, removeToast } = useToast();
@@ -23,15 +25,20 @@ export function TransactionsWorkspace() {
   const [submitState, setSubmitState] = useState<"idle" | "pending" | "success" | "error">("idle");
   const [message, setMessage] = useState("");
   const [filter, setFilter] = useState("all");
+  const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [total, setTotal] = useState(0);
   const amountRef = useRef<HTMLInputElement>(null);
 
   async function load() {
     setLoading(true); setLoadError("");
     try {
-      const [walletResponse, transactionResponse] = await Promise.all([fetch("/api/wallets"), fetch("/api/transactions")]);
+      const typeParam = filter === "all" ? "" : `&type=${filter}`;
+      const [walletResponse, transactionResponse] = await Promise.all([fetch("/api/wallets"), fetch(`/api/transactions?page=${page}&pageSize=${PAGE_SIZE}${typeParam}`)]);
       if (!walletResponse.ok || !transactionResponse.ok) throw new Error();
       const walletData = await walletResponse.json(); const transactionData = await transactionResponse.json();
       setWallets(walletData.wallets); setTransactions(transactionData.transactions);
+      setTotalPages(transactionData.pagination.totalPages); setTotal(transactionData.pagination.total);
       setForm((current) => ({ ...current, walletId: current.walletId || walletData.wallets[0]?.id || "" }));
       setTransfer((current) => ({ ...current, sourceWalletId: current.sourceWalletId || walletData.wallets[0]?.id || "", destinationWalletId: current.destinationWalletId || walletData.wallets[1]?.id || "" }));
     } catch { setLoadError("Data transaksi belum dapat dimuat. Periksa koneksi lalu coba lagi."); } finally { setLoading(false); }
@@ -40,7 +47,7 @@ export function TransactionsWorkspace() {
   useEffect(() => {
     const timer = window.setTimeout(() => void load(), 0);
     return () => window.clearTimeout(timer);
-  }, []);
+  }, [page, filter]);
 
   async function submit(event: FormEvent) {
     event.preventDefault(); setMessage(""); setSubmitState("pending");
@@ -77,7 +84,7 @@ export function TransactionsWorkspace() {
     }
   }
 
-  const visible = transactions.filter((item) => filter === "all" || item.type === filter);
+  const visible = transactions;
   return <><ToastContainer toasts={toasts} onClose={removeToast} /><a className="skip-link" href="#transaction-list">Lewati ke daftar transaksi</a><header className="mobile-page-bar"><MobileNav /></header><div className="content transaction-page">
     <div className="page-heading"><div><p className="eyebrow">PENCATATAN HARIAN</p><h1>Transaksi</h1><p className="muted">Catat setiap pergerakan uang agar saldomu selalu akurat.</p></div></div>
     <div className="transaction-layout">
@@ -101,8 +108,9 @@ export function TransactionsWorkspace() {
           <button className="button primary submit-button" disabled={submitState === "pending"}>{submitState === "pending" ? <LoaderCircle className="spin" size={17} /> : mode === "transaction" ? <Plus size={17} /> : <ArrowLeftRight size={17} />}{submitState === "pending" ? "Menyimpan..." : mode === "transaction" ? "Simpan transaksi" : "Lakukan transfer"}</button>
         </form>
       </section>
-      <section className="card list-card" id="transaction-list" aria-labelledby="list-title"><div className="section-header"><div><h2 id="list-title">Riwayat transaksi</h2><p className="muted">{visible.length} transaksi ditampilkan</p></div><div className="filter-control"><Filter size={15} /><select aria-label="Filter tipe transaksi" value={filter} onChange={(event) => setFilter(event.target.value)}><option value="all">Semua</option><option value="expense">Pengeluaran</option><option value="income">Pemasukan</option><option value="adjustment">Penyesuaian</option></select></div></div>
+      <section className="card list-card" id="transaction-list" aria-labelledby="list-title"><div className="section-header"><div><h2 id="list-title">Riwayat transaksi</h2><p className="muted">{total} transaksi ditemukan</p></div><div className="filter-control"><Filter size={15} /><select aria-label="Filter tipe transaksi" value={filter} onChange={(event) => { setFilter(event.target.value); setPage(1); }}><option value="all">Semua</option><option value="expense">Pengeluaran</option><option value="income">Pemasukan</option><option value="adjustment">Penyesuaian</option></select></div></div>
         {loading ? <div className="state-panel" aria-busy="true"><LoaderCircle className="spin" size={24} />Memuat transaksi...</div> : loadError ? <div className="state-panel error"><CircleAlert size={24} /><strong>Gagal memuat data</strong><span>{loadError}</span><button className="button subtle" onClick={() => void load()}><RotateCw size={16} />Coba lagi</button></div> : visible.length === 0 ? <div className="state-panel"><ArrowLeftRight size={24} /><strong>Belum ada transaksi</strong><span>Catat transaksi pertama melalui formulir.</span></div> : <div className="transaction-list workspace-list">{visible.map((tx) => <div className="transaction-row" key={tx.id}><div className={`transaction-icon ${tx.type}`}>{tx.type === "income" ? <ArrowDownLeft size={18} /> : <ArrowUpRight size={18} />}</div><div className="transaction-info"><strong>{tx.description || tx.category}</strong><small>{tx.wallet_name} · {formatDate(tx.date)}</small></div><div className="transaction-category">{tx.category}</div><strong className={tx.type === "income" ? "income-text" : "negative"}>{tx.type === "income" ? "+" : "-"}{idr.format(tx.amount)}</strong></div>)}</div>}
+        <PaginationBar page={page} totalPages={totalPages} total={total} pageSize={PAGE_SIZE} onPageChange={setPage} />
       </section>
     </div>
   </div></>;

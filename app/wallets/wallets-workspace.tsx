@@ -6,13 +6,17 @@ import { FormEvent, useEffect, useRef, useState } from "react";
 import { idr } from "@/lib/formatters";
 import { MobileNav } from "@/components/mobile-nav";
 import { ToastContainer, useToast } from "@/components/toast";
+import { PaginationBar } from "@/components/pagination";
 
 type Wallet = { id: string; name: string; type: string; currency: string; starting_balance: number; balance: number };
 const blank = { name: "", type: "bank", startingBalance: "0" };
+const PAGE_SIZE = 20;
 
 export function WalletsWorkspace() {
   const { toasts, addToast, removeToast } = useToast();
   const [wallets, setWallets] = useState<Wallet[]>([]); 
+  const [totalBalance, setTotalBalance] = useState(0);
+  const [page, setPage] = useState(1); const [totalPages, setTotalPages] = useState(1); const [itemCount, setItemCount] = useState(0);
   const [form, setForm] = useState(blank); 
   const [loading, setLoading] = useState(true); 
   const [error, setError] = useState(""); 
@@ -24,9 +28,10 @@ export function WalletsWorkspace() {
     setLoading(true); 
     setError(""); 
     try { 
-      const response = await fetch("/api/wallets"); 
+      const response = await fetch(`/api/wallets?page=${page}&pageSize=${PAGE_SIZE}`); 
       if (!response.ok) throw new Error(); 
-      setWallets((await response.json()).wallets); 
+      const data = await response.json();
+      setWallets(data.wallets); setTotalBalance(data.totalBalance); setTotalPages(data.pagination.totalPages); setItemCount(data.pagination.total); 
     } catch { 
       setError("Data wallet belum dapat dimuat."); 
     } finally { 
@@ -37,7 +42,7 @@ export function WalletsWorkspace() {
   useEffect(() => { 
     const timer = window.setTimeout(() => void load(), 0); 
     return () => window.clearTimeout(timer); 
-  }, []);
+  }, [page]);
   
   async function create(event: FormEvent) { 
     event.preventDefault(); 
@@ -84,9 +89,9 @@ export function WalletsWorkspace() {
     } 
   }
   
-  const total = wallets.reduce((sum, wallet) => sum + wallet.balance, 0);
+  const total = totalBalance;
   
-  return <><ToastContainer toasts={toasts} onClose={removeToast} /><a className="skip-link" href="#wallet-list">Lewati ke daftar wallet</a><header className="mobile-page-bar"><MobileNav /></header><div className="content transaction-page"><div className="page-heading"><div><p className="eyebrow">SUMBER DANA</p><h1>Wallet</h1><p className="muted">Kelola rekening, uang tunai, e-wallet, dan kreditmu.</p></div></div><div className="wallet-total card"><span>Total seluruh wallet</span><strong>{idr.format(total)}</strong><small>{wallets.length} wallet aktif</small></div><div className="transaction-layout wallet-layout">
+  return <><ToastContainer toasts={toasts} onClose={removeToast} /><a className="skip-link" href="#wallet-list">Lewati ke daftar wallet</a><header className="mobile-page-bar"><MobileNav /></header><div className="content transaction-page"><div className="page-heading"><div><p className="eyebrow">SUMBER DANA</p><h1>Wallet</h1><p className="muted">Kelola rekening, uang tunai, e-wallet, dan kreditmu.</p></div></div><div className="wallet-total card"><span>Total seluruh wallet</span><strong>{idr.format(total)}</strong><small>{total} wallet aktif</small></div><div className="transaction-layout wallet-layout">
     <section className="card form-card"><div className="form-title-icon"><WalletCards size={20} /></div><h2>Tambah wallet</h2><p className="muted form-intro">Saldo awal menjadi dasar perhitungan sebelum transaksi.</p><form onSubmit={create}>
       <Field label="Nama wallet" id="wallet-name"><input id="wallet-name" placeholder="Contoh: BCA Utama" value={form.name} onChange={(event) => setForm({ ...form, name: event.target.value })} required /></Field>
       <Field label="Tipe" id="wallet-type"><select id="wallet-type" value={form.type} onChange={(event) => setForm({ ...form, type: event.target.value })}><option value="bank">Bank</option><option value="cash">Tunai</option><option value="ewallet">E-wallet</option><option value="credit">Kredit / paylater</option></select></Field>
@@ -100,6 +105,7 @@ export function WalletsWorkspace() {
         <WalletCards size={20} className="section-icon" />
       </div>
       {loading ? <div className="state-panel"><LoaderCircle className="spin" size={24} />Memuat wallet...</div> : error ? <div className="state-panel error"><CircleAlert size={24} /><strong>Gagal memuat data</strong><span>{error}</span><button className="button subtle" onClick={() => void load()}><RotateCw size={16} />Coba lagi</button></div> : <div className="wallet-grid">{wallets.map((wallet) => <Link className="wallet-card" key={wallet.id} href={`/wallets/${wallet.id}`}><div className={`wallet-icon ${wallet.type}`}>{wallet.type === "cash" ? <Banknote size={19} /> : wallet.type === "ewallet" ? <Smartphone size={19} /> : wallet.type === "credit" ? <CreditCard size={19} /> : <Landmark size={19} />}</div><div><small>{wallet.type === "ewallet" ? "E-wallet" : wallet.type === "credit" ? "Kredit / paylater" : wallet.type}</small><h2>{wallet.name}</h2></div><strong className={wallet.balance < 0 ? "negative" : ""}>{idr.format(wallet.balance)}</strong><span>Saldo awal {idr.format(wallet.starting_balance)}</span></Link>)}</div>}
+      <PaginationBar page={page} totalPages={totalPages} total={itemCount} pageSize={PAGE_SIZE} onPageChange={setPage} />
     </section>
   </div></div></>;
 }

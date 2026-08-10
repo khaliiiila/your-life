@@ -7,7 +7,7 @@ export const dynamic = "force-dynamic";
 export async function GET(request: Request) {
   const pagination = parsePagination(request);
   const result = await listAssets(pagination);
-  return NextResponse.json({ assets: result.rows, pagination: paginationMeta(pagination, result.total) });
+  return NextResponse.json({ assets: result.rows, summary: result.summary, pagination: paginationMeta(pagination, result.total) });
 }
 
 export async function POST(request: Request) {
