@@ -17,7 +17,7 @@ export async function listTransactions(filters: { type?: string; walletId?: stri
   const total = Number((await query<{ total: string }>(`SELECT COUNT(*) AS total FROM transactions t WHERE ${where}`, params)).rows[0].total);
   let suffix = "";
   if (pagination) { params.push(pagination.pageSize, pagination.offset); suffix = ` LIMIT $${params.length - 1} OFFSET $${params.length}`; }
-  const rows = (await query(`SELECT t.id,t.type,t.wallet_id,w.name AS wallet_name,t.amount,t.category,t.description,t.date,t.note FROM transactions t JOIN wallets w ON w.id=t.wallet_id WHERE ${where} ORDER BY t.date DESC,t.created_at DESC${suffix}`, params)).rows.map((row) => numbers(row, ["amount"]));
+  const rows = (await query(`SELECT t.id,t.type,t.wallet_id,w.name AS wallet_name,t.amount,t.category,t.description,t.date::text,t.note FROM transactions t JOIN wallets w ON w.id=t.wallet_id WHERE ${where} ORDER BY t.date DESC,t.created_at DESC${suffix}`, params)).rows.map((row) => numbers(row, ["amount"]));
   return { rows, total };
 }
 
