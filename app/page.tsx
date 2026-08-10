@@ -25,7 +25,7 @@ export default async function Home() {
     <div className="app-shell">
     <AppNav />
     <main className="main" id="main-content">
-      <header className="topbar"><MobileNav /><div className="topbar-actions"><EyeToggle className="icon-button" /><button className="icon-button" aria-label="Notifikasi"><Bell size={19} /></button><button className="avatar small" aria-label="Buka profil">K</button></div></header>
+      <header className="topbar"><MobileNav /><div className="topbar-actions"><button className="icon-button" aria-label="Notifikasi"><Bell size={19} /></button><button className="avatar small" aria-label="Buka profil">K</button></div></header>
       <div className="content">
         <div className="page-heading"><div><p className="eyebrow">{dateLabel}</p><h1>Ringkasan keuangan</h1><p className="muted">Pantau aliran uang dan rencana keuanganmu.</p></div><Link className="button primary" href="/transactions"><Plus size={17} />Tambah transaksi</Link></div>
         <Card className="daily-expense" id="daily-expense">
@@ -33,6 +33,7 @@ export default async function Home() {
           <div className="daily-expense-body">
             <div className="daily-today">
               <MaskedAmount className="hero-number">{idr.format(data.daily.todayTotal)}</MaskedAmount>
+              <EyeToggle className="icon-button" />
             </div>
             <div className="daily-compare">
               <div>

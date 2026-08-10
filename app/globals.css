@@ -28,6 +28,8 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
 .card-heading-row { margin-bottom: 12px; }
 .daily-expense-body { display: flex; align-items: baseline; justify-content: space-between; flex-wrap: wrap; gap: 16px; }
 .daily-today .hero-number { margin-bottom: 0; }
+.daily-today { align-items: center; display: flex; gap: 10px; }
+.daily-today .icon-button { color: var(--muted); margin-left: -6px; }
 .daily-compare { display: flex; gap: 24px; flex-wrap: wrap; }
 .daily-compare > div { display: flex; flex-direction: column; gap: 2px; }
 .daily-compare small { font-size: 11px; }
