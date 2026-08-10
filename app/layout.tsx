@@ -11,7 +11,7 @@ const geist = Geist({
 
 export const metadata: Metadata = {
   title: "dompetku — Laporan Keuangan",
-  description: "Ringkasan kondisi keuangan pribadi",
+  description: "Ringkasan kondisi keuangan pribadi, analitik bulanan/tahunan dengan perbandingan rata-rata historis.",
 };
 
 export const viewport: Viewport = {

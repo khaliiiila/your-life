@@ -7,3 +7,13 @@ Error: fetch failed
     at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
 
 Node.js v24.19.0
+2026-08-08T23:00:01.811Z { ok: true, date: '2026-08-08', target: 'yesterday', message_id: 1994 }
+file:///app/scripts/send-scheduled-report.mjs:17
+if (!response.ok) throw new Error(result.error || `Report API returned ${response.status}.`);
+                        ^
+
+Error: fetch failed
+    at file:///app/scripts/send-scheduled-report.mjs:17:25
+    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+
+Node.js v24.19.0

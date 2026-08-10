@@ -18,6 +18,7 @@ export function AppNav() {
       <Link className={`nav-item ${isActive("/") ? "active" : ""}`} href="/"><LayoutDashboard size={18} />Overview</Link>
       <Link className={`nav-item ${isActive("/transactions") ? "active" : ""}`} href="/transactions"><ArrowUpRight size={18} />Transaksi</Link>
       <Link className={`nav-item ${isActive("/wallets") ? "active" : ""}`} href="/wallets"><WalletCards size={18} />Wallet</Link>
+      <Link className={`nav-item ${isActive("/analytics") ? "active" : ""}`} href="/analytics"><BarChart3 size={18} />Analitik</Link>
       <Link className={`nav-item ${isActive("/assets") ? "active" : ""}`} href="/assets"><BarChart3 size={18} />Aset & Investasi</Link>
       <Link className={`nav-item ${isActive("/debts") ? "active" : ""}`} href="/debts"><CreditCard size={18} />Utang</Link>
       <Link className={`nav-item ${isActive("/wishlists") ? "active" : ""}`} href="/wishlists"><Gift size={18} />Wishlist</Link>

@@ -2,6 +2,10 @@ import { numbers, query } from "./db";
 
 function dateKey(d: Date) { return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`; }
 function shiftMonth(month: string, offset: number) { const [year, monthNum] = month.split("-").map(Number); return dateKey(new Date(Date.UTC(year, monthNum - 1 + offset, 1))).slice(0, 7); }
+function startOfWeek(d: Date): Date { const date = new Date(d); date.setDate(date.getDate() - date.getDay()); return date; }
+function endOfWeek(d: Date): Date { const date = new Date(d); date.setDate(date.getDate() + (6 - date.getDay())); return date; }
+function startOfYear(d: Date): Date { return new Date(d.getFullYear(), 0, 1); }
+function endOfYear(d: Date): Date { return new Date(d.getFullYear(), 11, 31); }
 
 export async function getDailyExpenses() {
   const today = dateKey(new Date()); const month = today.slice(0, 7); const lastMonth = shiftMonth(month, -1);
@@ -15,6 +19,82 @@ export async function getBalanceHistory(days = 366) {
   const [startResult, priorResult, rowsResult] = await Promise.all([query<{ value:string }>("SELECT COALESCE(SUM(starting_balance),0) value FROM wallets"),query<{ value:string }>("SELECT COALESCE(SUM(CASE WHEN type IN ('income','adjustment') THEN amount ELSE -amount END),0) value FROM transactions WHERE date<$1",[targetKey]),query<{ date:string; value:string }>("SELECT date::text,SUM(CASE WHEN type IN ('income','adjustment') THEN amount ELSE -amount END) value FROM transactions WHERE date>=$1 GROUP BY date ORDER BY date",[targetKey])]);
   const map=new Map(rowsResult.rows.map(r=>[r.date,Number(r.value)])); let balance=Number(startResult.rows[0].value)+Number(priorResult.rows[0].value); const cursor=new Date(target),last=new Date(),points=[];
   while(cursor<=last){const key=dateKey(cursor);balance+=map.get(key)??0;points.push({date:key,balance});cursor.setDate(cursor.getDate()+1);} return points;
+}
+
+export async function getAnalytics(period: "daily" | "weekly" | "monthly" | "yearly") {
+  const now = new Date();
+  
+  let from: Date, to: Date;
+  
+  switch (period) {
+    case "daily":
+      from = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+      to = from;
+      break;
+    case "weekly":
+      from = startOfWeek(now);
+      to = endOfWeek(now);
+      break;
+    case "monthly":
+      from = new Date(now.getFullYear(), now.getMonth(), 1);
+      to = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+      break;
+    case "yearly":
+      from = startOfYear(now);
+      to = endOfYear(now);
+      break;
+  }
+  
+  const fromKey = dateKey(from);
+  const toKey = dateKey(to);
+  const daysInPeriod = Math.ceil((to.getTime() - from.getTime()) / (1000 * 60 * 60 * 24)) + 1;
+  
+  const oneYearAgoFrom = new Date(from); oneYearAgoFrom.setFullYear(oneYearAgoFrom.getFullYear() - 1);
+  const twoYearAgoFrom = new Date(from); twoYearAgoFrom.setFullYear(twoYearAgoFrom.getFullYear() - 2);
+  const prevTo = new Date(to); prevTo.setFullYear(prevTo.getFullYear() - 1);
+  
+  const [currResult, prevResult, catResult, distResult, dayResult, topDay] = await Promise.all([
+    query(`SELECT COALESCE(SUM(amount) FILTER (WHERE type='income' AND date>=$1 AND date<=$2),0) income,COALESCE(SUM(amount) FILTER (WHERE type='expense' AND date>=$1 AND date<=$2 AND category<>'transfer'),0) expense,COUNT(*) FILTER (WHERE type IN ('income','adjustment') AND date>=$1 AND date<=$2) tx_count FROM transactions`, [fromKey, toKey]),
+    query(`SELECT COALESCE(SUM(amount) FILTER (WHERE type='income' AND date>=$1 AND date<=$2),0) income,COALESCE(SUM(amount) FILTER (WHERE type='expense' AND date>=$1 AND date<=$2 AND category<>'transfer'),0) expense FROM transactions WHERE date>=$3 AND date<=$4`, [oneYearAgoFrom.toISOString().split("T")[0], prevTo.toISOString().split("T")[0], oneYearAgoFrom.toISOString().split("T")[0], prevTo.toISOString().split("T")[0]]),
+    query(`SELECT category,SUM(amount) total FROM transactions WHERE type='expense' AND date>=$1 AND date<=$2 AND category<>'transfer' GROUP BY category ORDER BY total DESC LIMIT 5`, [fromKey, toKey]),
+    query(`SELECT type,SUM(amount) total,COUNT(*) cnt FROM transactions WHERE date>=$1 AND date<=$2 GROUP BY type`, [fromKey, toKey]),
+    query(`SELECT date::text,type,SUM(amount) total FROM transactions WHERE date>=$1 AND date<=$2 GROUP BY date,type ORDER BY date`, [fromKey, toKey]),
+    query(`SELECT date::text,SUM(amount) total FROM transactions WHERE type='expense' AND date>=$1 AND date<=$2 AND category<>'transfer' GROUP BY date ORDER BY total DESC LIMIT 1`, [fromKey, toKey])
+  ]);
+  
+  const r = currResult.rows[0]; const p = prevResult.rows[0];
+  const currIncome = Number(r.income), currExpense = Number(r.expense);
+  const prevIncome = Number(p.income), prevExpense = Number(p.expense);
+  
+  const categories = catResult.rows.map(row => ({ category: row.category, total: Number(row.total) }));
+  const distribution = distResult.rows.map(row => ({ type: row.type, total: Number(row.total), count: Number(row.cnt) }));
+  const dailyBreakdown = dayResult.rows.map(row => ({ date: row.date, type: row.type, total: Number(row.total) }));
+  const worstDay = topDay.rows.length > 0 ? { date: topDay.rows[0].date, amount: Number(topDay.rows[0].total) } : null;
+  
+  const avgDaysPrev = daysInPeriod;
+  const dailyIncomeAvg = prevIncome !== 0 ? Math.round(currIncome / (prevIncome / avgDaysPrev)) : currIncome;
+  const dailyExpenseAvg = prevExpense !== 0 ? Math.round(currExpense / (prevExpense / avgDaysPrev)) : currExpense;
+  
+  const netFlow = currIncome - currExpense;
+  const prevNetFlow = prevIncome - prevExpense;
+  const savingsRate = currIncome > 0 ? Math.round(((currIncome - currExpense) / currIncome) * 100) : 0;
+  const prevSavingsRate = prevIncome > 0 ? Math.round(((prevIncome - prevExpense) / prevIncome) * 100) : 0;
+  
+  return {
+    period,
+    label: `${new Intl.DateTimeFormat("id-ID", { month: "long" }).format(from).toUpperCase()} ${new Intl.DateTimeFormat("id-ID").format(from).slice(-4)}`,
+    summary: { currentPeriod: currIncome, previousPeriod: prevIncome },
+    averages: { dailyIncome: Math.round(currIncome / daysInPeriod), dailyExpense: Math.round(currExpense / daysInPeriod), incomeAvg: dailyIncomeAvg, expenseAvg: dailyExpenseAvg },
+    categories,
+    distribution,
+    dailyBreakdown,
+    worstDay,
+    dates: Array.from({ length: daysInPeriod }, (_, i) => ({ date: dateKey(new Date(from.getTime() + i * (24 * 60 * 60 * 1000))) })),
+  };
+}
+
+function formatDate(d: Date): string {
+  return `${d.getDate()} ${new Intl.DateTimeFormat("id-ID", { month: "short" }).format(d).toUpperCase()}`;
 }
 
 export async function getDashboardData() {
