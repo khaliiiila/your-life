@@ -1,3 +1,4 @@
+import { AppNav } from "@/components/app-nav";
 import { AnalyticsPage } from "./analytics-page";
 
 export const dynamic = "force-dynamic";
