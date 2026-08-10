@@ -11,7 +11,7 @@
     "db:migrate": "tsx scripts/migrate.ts",
     "db:import-sqlite": "tsx scripts/migrate-sqlite-to-pg.ts",
     "db:backup": "sh -c 'mkdir -p data/backups && pg_dump \"$DATABASE_URL\" -Fc -f data/backups/your-life-$(date +%Y%m%d-%H%M%S).dump'",
-    "db:pull": "node -e \"console.error('db:pull unsupported for PostgreSQL'); process.exit(1)\"",
+    "db:pull": "tsx scripts/pull-db.ts",
     "db:restore": "sh -c 'test -n \"$1\" && pg_restore --clean --if-exists --no-owner -d \"$DATABASE_URL\" \"$1\"' --",
     "check:finance": "tsx scripts/check-finance.ts"
   },

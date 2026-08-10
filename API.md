@@ -51,7 +51,7 @@ Semua route AI memakai prefix `/api/ai` dan memetakan ke CRUD aplikasi:
 
 ## DB Sync (Cloning Production → Dev)
 
-Untuk meng-clone database production ke dev lokal via secure API endpoint:
+Untuk meng-clone database production ke dev lokal via secure API endpoint (PostgreSQL):
 
 ### Server (production)
 
@@ -65,12 +65,12 @@ Setelah deploy, endpoint tersedia:
 
 | Method | Endpoint | Fungsi |
 | --- | --- | --- |
-| GET | `/api/admin/db-export` | Download dump SQLite production (WAL-safe backup) |
+| GET | `/api/admin/db-export` | Dump PostgreSQL production sebagai SQL (TRUNCATE + INSERT, satu transaksi) |
 
 ```bash
 curl -H "Authorization: Bearer $DB_SYNC_SECRET" \
   https://yl.infoinfo.web.id/api/admin/db-export \
-  -o keuangan_prod.db
+  -o keuangan_prod.sql
 ```
 
 ### Lokal (dev)
@@ -78,6 +78,7 @@ curl -H "Authorization: Bearer $DB_SYNC_SECRET" \
 Set env di `.env` lokal:
 
 ```env
+DATABASE_URL=postgresql://your_life:your_life@127.0.0.1:15433/your_life
 DB_SYNC_SECRET=rahasia-acak-64-karakter
 PROD_APP_URL=https://yl.infoinfo.web.id
 ```
@@ -89,18 +90,26 @@ npm run db:pull
 ```
 
 Script akan:
-1. Auto-backup DB lokal ke `backups/keuangan_dev_backup_<timestamp>.db`
-2. Download dari production via HTTP (HTTPS) dengan Bearer token
-3. Verifikasi integritas (PRAGMA integrity_check)
-4. Replace `data/keuangan.db`
+1. Auto-backup DB lokal ke `backups/your-life-local_<timestamp>.dump` (pg_dump custom format)
+2. Download dump SQL dari production via HTTPS dengan Bearer token
+3. Jalankan SQL (TRUNCATE semua tabel + INSERT) langsung ke database lokal
+4. Data lokal ditimpa total oleh data production
 
 ### Restore dari backup
 
 ```bash
-npm run db:restore              # list semua backup
-npm run db:restore <index>     # restore dari index (0 = terbaru)
-npm run db:restore <path>      # restore dari file path spesifik
+npm run db:restore <path.dump>   # restore dari file dump pg_dump
 ```
+
+```bash
+npm run db:backup                # backup DB lokal ke data/backups/*.dump
+```
+
+### Catatan
+
+- Dump memakai `TRUNCATE ... CASCADE` sehingga data lokal yang ada akan diganti seluruhnya.
+- Restore tidak memerlukan `pg_dump`/`psql` di host — menggunakan driver `pg` langsung.
+- `db:pull` membutuhkan Docker (container `your-life-db-1`) untuk membuat backup lokal via `pg_dump` yang versinya cocok. Override nama container dengan `DB_CONTAINER` jika berbeda.
 
 ## Laporan Otomatis
 
