@@ -2,11 +2,14 @@
 
 import { useMemo, useState } from "react";
 import { Area, AreaChart, CartesianGrid, Legend, ResponsiveContainer, Tooltip as RechartsTooltip, XAxis, YAxis } from "recharts";
-import { formatDate, formatDateShort, idr } from "@/lib/formatters";
+import { compactIdr, formatDate, formatDateShort, idr } from "@/lib/formatters";
 
 type CashflowPoint = { date: string; income: number; expenses: number };
+type CashflowTx = { date: string; type: string; amount: number; category: string; description: string };
+type CashflowData = { points: CashflowPoint[]; transactions: CashflowTx[] };
+type Bucket = { date: string; income: number; expenses: number; txs: CashflowTx[] };
 
-export function CashflowChart({ points }: { points: CashflowPoint[] }) {
+export function CashflowChart({ points, transactions }: CashflowData) {
   const [range, setRange] = useState("7d");
 
   const selectedDays = useMemo(() => {
@@ -35,8 +38,18 @@ export function CashflowChart({ points }: { points: CashflowPoint[] }) {
     });
   }, [points, selectedDays]);
 
+  const txByDate = useMemo(() => {
+    const map = new Map<string, CashflowTx[]>();
+    for (const tx of transactions) {
+      const list = map.get(tx.date) ?? [];
+      list.push(tx);
+      map.set(tx.date, list);
+    }
+    return map;
+  }, [transactions]);
+
   const bucketedData = useMemo(() => {
-    const map = new Map<string, { income: number; expenses: number }>();
+    const map = new Map<string, Bucket>();
 
     for (const p of filteredPoints) {
       let key: string;
@@ -52,14 +65,15 @@ export function CashflowChart({ points }: { points: CashflowPoint[] }) {
         key = p.date.slice(0, 7);
       }
 
-      const entry = map.get(key) ?? { income: 0, expenses: 0 };
+      const entry = map.get(key) ?? { date: key, income: 0, expenses: 0, txs: [] as CashflowTx[] };
       entry.income += p.income;
       entry.expenses += p.expenses;
+      entry.txs.push(...(txByDate.get(p.date) ?? []));
       map.set(key, entry);
     }
 
     return Array.from(map.entries()).map(([date, data]) => ({ ...data, date })).sort((a, b) => a.date.localeCompare(b.date));
-  }, [filteredPoints, selectedBucket]);
+  }, [filteredPoints, selectedBucket, txByDate]);
 
   const getLabel = (dateStr: string) => {
     if (!dateStr) return "";
@@ -103,7 +117,7 @@ export function CashflowChart({ points }: { points: CashflowPoint[] }) {
               <CartesianGrid strokeDasharray="3 3" stroke="var(--line)" vertical={false} />
               <XAxis dataKey="date" tick={{ fontSize: 11, fill: "var(--muted)" }} tickFormatter={getLabel} interval="preserveStartEnd" />
               <YAxis tick={{ fontSize: 11, fill: "var(--muted)" }} tickFormatter={(v: number) => { if (Math.abs(v) >= 1_000_000) return `${(v / 1_000_000).toFixed(1)}M`; if (Math.abs(v) >= 1_000) return `${(v / 1_000).toFixed(0)}K`; return String(v); }} width={60} />
-              <RechartsTooltip formatter={(value, name) => [value !== undefined ? idr.format(Number(value)) : "0", name]} labelStyle={{ color: 'var(--ink)', fontSize: '12px' }} />
+              <RechartsTooltip content={<ChartTooltip getLabel={getLabel} />} />
               <Legend wrapperStyle={{ paddingTop: '10px' }} />
               <Area type="monotone" dataKey="income" name="Pemasukan" stroke="var(--green)" fill="url(#income-gradient)" strokeWidth={2} dot={false} />
               <Area type="monotone" dataKey="expenses" name="Pengeluaran" stroke="var(--red)" fill="url(#expense-gradient)" strokeWidth={2} dot={false} />
@@ -111,6 +125,35 @@ export function CashflowChart({ points }: { points: CashflowPoint[] }) {
           </ResponsiveContainer>
         )}
       </div>
+    </div>
+  );
+}
+
+function ChartTooltip({ active, payload, getLabel }: { active?: boolean; payload?: Array<{ payload: Bucket }>; getLabel: (d: string) => string }) {
+  if (!active || !payload?.length) return null;
+  const { date, income, expenses, txs } = payload[0].payload;
+  return (
+    <div className="chart-tooltip">
+      <div className="chart-tooltip-head">
+        <strong>{getLabel(date)}</strong>
+        <span className="chart-tooltip-total">
+          <i className="tt-in">{compactIdr.format(income)}</i>
+          <i className="tt-out">{compactIdr.format(expenses)}</i>
+        </span>
+      </div>
+      {txs.length ? (
+        <ul className="chart-tooltip-list">
+          {txs.slice(0, 6).map((tx, i) => (
+            <li key={i}>
+              <span className="chart-tooltip-label">{tx.description || tx.category}</span>
+              <span className={tx.type === "income" ? "tt-amount in" : "tt-amount out"}>
+                {tx.type === "income" ? "+" : "−"}{idr.format(tx.amount)}
+              </span>
+            </li>
+          ))}
+          {txs.length > 6 && <li className="chart-tooltip-more">+{txs.length - 6} transaksi lainnya</li>}
+        </ul>
+      ) : <p className="chart-tooltip-empty">Tidak ada transaksi</p>}
     </div>
   );
 }
