@@ -1,9 +1,9 @@
 import { ArrowDownLeft, ArrowDownRight, ArrowUpRight, Bell, CalendarClock, ChevronRight, MoreHorizontal, Plus, Send, WalletCards } from "lucide-react";
 import Link from "next/link";
-import { getBalanceHistory, getDashboardData } from "@/lib/dashboard";
+import { getDailyCashflow, getDashboardData } from "@/lib/dashboard";
 import { compactIdr, formatDate, idr } from "@/lib/formatters";
 import { AppNav } from "@/components/app-nav";
-import { BalanceAreaChart } from "@/components/balance-chart";
+import { CashflowChart } from "@/components/balance-chart";
 import { MobileNav } from "@/components/mobile-nav";
 import { BalanceVisibility, EyeToggle, MaskedAmount } from "@/components/balance-visibility";
 
@@ -14,7 +14,7 @@ function Card({ children, className = "", id }: { children: React.ReactNode; cla
 }
 
 export default async function Home() {
-  const [data, balanceHistory] = await Promise.all([getDashboardData(), getBalanceHistory(366)]);
+  const [data, cashflow] = await Promise.all([getDashboardData(), getDailyCashflow(365)]);
   const netFlow = data.flow.income - data.flow.expenses;
   const maxFlow = Math.max(data.flow.income, data.flow.expenses, 1);
   const now = new Date();
@@ -58,7 +58,7 @@ export default async function Home() {
           <Card><div className="card-label"><span>Arus kas bulan ini</span><span className="date-chip">{monthLabel}</span></div><MaskedAmount className="stat-number">{idr.format(netFlow)}</MaskedAmount><div className="flow-legend"><span><i className="dot income" />Masuk {compactIdr.format(data.flow.income)}</span><span><i className="dot expense" />Keluar {compactIdr.format(data.flow.expenses)}</span></div><div className="flow-bar"><i className="income-fill" style={{ width: `${(data.flow.income / maxFlow) * 100}%` }} /><i className="expense-fill" style={{ width: `${(data.flow.expenses / maxFlow) * 100}%` }} /></div></Card>
           <Card><div className="card-label"><span>Investasi</span><span className={`trend ${data.investments.gain >= 0 ? "positive" : "negative"}`}>{data.investments.gain >= 0 ? "+" : ""}{idr.format(data.investments.gain)}</span></div><MaskedAmount className="stat-number">{idr.format(data.investments.value)}</MaskedAmount><p className="muted small-text">Saham, crypto, dan aset lain</p><Link className="text-link" href="/assets">Lihat portofolio <ChevronRight size={15} /></Link></Card>
         </div>
-        <Card className="wide-card balance-chart" id="balance-history"><BalanceAreaChart points={balanceHistory} /></Card>
+        <Card className="wide-card balance-chart" id="balance-history"><CashflowChart points={cashflow} /></Card>
         <div className="section-grid">
           <Card className="wide-card"><div className="section-header"><div><h2>Saldo wallet</h2><p className="muted">Saldo terbaru di semua akun</p></div><Link className="text-link" href="/wallets">Kelola wallet <ChevronRight size={15} /></Link></div><div className="wallet-list">{data.wallets.slice(0, 5).map((wallet) => <Link className="wallet-row" key={wallet.id} href={`/wallets/${wallet.id}`}><div className={`wallet-icon ${wallet.type}`}><WalletCards size={18} /></div><div className="wallet-name"><strong>{wallet.name}</strong><small>{wallet.type === "credit" ? "Kredit / paylater" : wallet.type === "cash" ? "Tunai" : "Bank"}</small></div><MaskedAmount className={wallet.balance < 0 ? "negative" : ""}>{idr.format(wallet.balance)}</MaskedAmount><ChevronRight className="row-chevron" size={17} /></Link>)}</div></Card>
            <Card className="upcoming-card" id="upcoming"><div className="section-header"><div><h2>Akan datang</h2><p className="muted">Kewajiban terjadwal</p></div><CalendarClock size={19} className="section-icon" /></div>{data.upcoming.length ? data.upcoming.map((item) => <div className="upcoming-row" key={item.id}><div className="calendar-date"><strong>{new Date(`${item.due_date}T00:00:00`).getDate()}</strong><small>{new Date(`${item.due_date}T00:00:00`).toLocaleDateString("id-ID", { month: "short" })}</small></div><div><strong>{item.name}</strong><small>{item.category}</small></div><strong>{idr.format(item.amount)}</strong></div>) : <div className="empty-state">Belum ada pengeluaran mendatang.</div>}<Link className="button subtle full-button" href="/upcoming"><Plus size={16} />Jadwalkan pengeluaran</Link></Card>

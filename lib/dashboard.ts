@@ -21,6 +21,15 @@ export async function getBalanceHistory(days = 366) {
   while(cursor<=last){const key=dateKey(cursor);balance+=map.get(key)??0;points.push({date:key,balance});cursor.setDate(cursor.getDate()+1);} return points;
 }
 
+export async function getDailyCashflow(days = 365) {
+  const target = new Date(); target.setDate(target.getDate()-days); const targetKey=dateKey(target);
+  const rowsResult = await query<{ date:string; type:string; total:string }>(`SELECT date::text,type,SUM(amount) AS total FROM transactions WHERE date>=$1 AND category<>'transfer' GROUP BY date,type ORDER BY date`,[targetKey]);
+  const dailyMap=new Map<string,{income:number;expenses:number}>(); const cursor=new Date(target),last=new Date();
+  while(cursor<=last){const key=dateKey(cursor);dailyMap.set(key,{income:0,expenses:0});cursor.setDate(cursor.getDate()+1);}
+  for(const r of rowsResult.rows){const m=dailyMap.get(r.date);if(m){if(r.type==='income')m.income=Number(r.total);else if(r.type==='expense')m.expenses=Number(r.total);}}
+  return Array.from(dailyMap.entries()).map(([date,v])=>({date,...v}));
+}
+
 export async function getAnalytics(period: "daily" | "weekly" | "monthly" | "yearly") {
   const now = new Date();
   
