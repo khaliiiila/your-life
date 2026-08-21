@@ -145,6 +145,12 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
 .chart-tooltip-list .tt-amount.out { color: var(--red); }
 .chart-tooltip-more { color: var(--muted); font-size: 11px; padding-top: 4px !important; }
 .chart-tooltip-empty { color: var(--muted); font-size: 12px; margin: 0; padding: 4px 0; }
+.balance-chart-top-row { align-items: center; display: flex; justify-content: space-between; }
+.chart-cat-filter { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 4px; }
+.chart-cat-label { align-items: center; color: var(--muted); display: flex; font-size: 11px; font-weight: 600; margin-right: 4px; }
+.chart-cat-btn { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; color: var(--muted); cursor: pointer; font-size: 11px; font-weight: 500; line-height: 1; padding: 4px 10px; transition: background 120ms, color 120ms, border-color 120ms; }
+.chart-cat-btn:hover { background: var(--green-soft); border-color: var(--green); color: var(--green); }
+.chart-cat-btn.active { background: var(--green); border-color: var(--green); color: #fff; }
 .chart-container { height: 280px; }
 .loading-state { align-items: center; display: flex; flex-direction: column; gap: 12px; padding: 60px; text-align: center; }
 .spinner { animation: spin 1s linear infinite; color: var(--green); }

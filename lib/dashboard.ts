@@ -23,16 +23,18 @@ export async function getBalanceHistory(days = 366) {
 
 export async function getDailyCashflow(days = 365) {
   const target = new Date(); target.setDate(target.getDate()-days); const targetKey=dateKey(target);
-  const [rowsResult, txResult] = await Promise.all([
+  const [rowsResult, txResult, catResult] = await Promise.all([
     query<{ date:string; type:string; total:string }>(`SELECT date::text,type,SUM(amount) AS total FROM transactions WHERE date>=$1 AND category<>'transfer' GROUP BY date,type ORDER BY date`,[targetKey]),
-    query<{ date:string; type:string; amount:string; category:string; description:string|null }>(`SELECT date::text,type,amount,category,description FROM transactions WHERE date>=$1 AND category<>'transfer' ORDER BY date,created_at`,[targetKey])
+    query<{ date:string; type:string; amount:string; category:string; description:string|null }>(`SELECT date::text,type,amount,category,description FROM transactions WHERE date>=$1 AND category<>'transfer' ORDER BY date,created_at`,[targetKey]),
+    query<{ category:string }>(`SELECT DISTINCT category FROM transactions WHERE date>=$1 AND type='expense' AND category<>'transfer' ORDER BY category`,[targetKey])
   ]);
   const dailyMap=new Map<string,{income:number;expenses:number}>(); const cursor=new Date(target),last=new Date();
   while(cursor<=last){const key=dateKey(cursor);dailyMap.set(key,{income:0,expenses:0});cursor.setDate(cursor.getDate()+1);}
   for(const r of rowsResult.rows){const m=dailyMap.get(r.date);if(m){if(r.type==='income')m.income=Number(r.total);else if(r.type==='expense')m.expenses=Number(r.total);}}
   const points=Array.from(dailyMap.entries()).map(([date,v])=>({date,...v}));
   const transactions=txResult.rows.map(r=>({date:r.date,type:r.type,amount:Number(r.amount),category:r.category,description:r.description??r.category}));
-  return { points, transactions };
+  const categories=catResult.rows.map(r=>r.category);
+  return { points, transactions, categories };
 }
 
 export async function getAnalytics(period: "daily" | "weekly" | "monthly" | "yearly") {
