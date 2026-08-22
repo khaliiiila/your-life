@@ -54,7 +54,7 @@ export default async function Home() {
           </div>
         </Card>
         <div className="summary-grid">
-          <Card><div className="card-label"><span>Ringkasan Bulanan</span><span className="date-chip">{monthLabel}</span></div><MaskedAmount className="stat-number">{idr.format(netFlow)}</MaskedAmount><div className="flow-legend"><span><i className="dot income" />Masuk {compactIdr.format(data.flow.income)}</span><span><i className="dot expense" />Keluar {compactIdr.format(data.flow.expenses)}</span></div><div className="flow-bar"><i className="income-fill" style={{ width: `${(data.flow.income / maxFlow) * 100}%` }} /><i className="expense-fill" style={{ width: `${(data.flow.expenses / maxFlow) * 100}%` }} /></div></Card>
+          <Card><div className="card-label"><span>Pemasukan & Pengeluaran</span><span className="date-chip">{monthLabel}</span></div><MaskedAmount className="stat-number">{idr.format(data.flow.income)}</MaskedAmount><p className="muted small-text">Masuk: {idr.format(data.flow.income)}</p><p className="muted small-text">Keluar: {idr.format(data.flow.expenses)}</p></Card>
           <Card><div className="card-label"><span>Saldo Utama</span></div><MaskedAmount className="stat-number">{idr.format(Number(data.wallets[0]?.balance) || 0)}</MaskedAmount><p className="muted small-text">{data.wallets[0]?.name}</p><Link className="text-link" href="/wallets">Kelola semua <ChevronRight size={15} /></Link></Card>
         </div>
         <Card className="wide-card balance-chart" id="balance-history"><CashflowChart {...cashflow} /></Card>
