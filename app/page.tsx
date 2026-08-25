@@ -13,13 +13,25 @@ function Card({ children, className = "", id }: { children: React.ReactNode; cla
   return <section className={`card ${className}`} id={id}>{children}</section>;
 }
 
+function FlowTrend({ curr, prev, goodWhenUp, label }: { curr: number; prev: number; goodWhenUp: boolean; label: string }) {
+  if (!prev || curr === prev) return null;
+  const up = curr > prev;
+  return <span className={`trend ${up === goodWhenUp ? "positive" : "negative"}`}>{up ? <ArrowUpRight size={13} /> : <ArrowDownRight size={13} />}{Math.abs(Math.round(((curr - prev) / prev) * 100))}% vs {label}</span>;
+}
+
 export default async function Home() {
   const [data, cashflow] = await Promise.all([getDashboardData(), getDailyCashflow(365)]);
   const netFlow = data.flow.income - data.flow.expenses;
+  const burnRate = data.flow.income > 0 ? Math.min(Math.round((data.flow.expenses / data.flow.income) * 100), 100) : data.flow.expenses > 0 ? 100 : 0;
   const maxFlow = Math.max(data.flow.income, data.flow.expenses, 1);
   const now = new Date();
   const dateLabel = new Intl.DateTimeFormat("id-ID", { weekday: "long", day: "numeric", month: "long", year: "numeric" }).format(now).toUpperCase();
   const monthLabel = new Intl.DateTimeFormat("id-ID", { month: "long", year: "numeric" }).format(now);
+  const prevMonthLabel = new Intl.DateTimeFormat("id-ID", { month: "short" }).format(new Date(now.getFullYear(), now.getMonth() - 1, 1));
+  // ponytail: proyeksi linear naif (rata-rata harian × hari dalam bulan), cukup untuk gambaran kasar
+  const dayAvg = Math.round(data.flow.expenses / now.getDate());
+  const projection = dayAvg * new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
+  const topCategory = data.topCategory;
 
   return <BalanceVisibility>
     <div className="app-shell">
@@ -53,9 +65,9 @@ export default async function Home() {
             </div>
           </div>
         </Card>
-        <div className="summary-grid">
-          <Card><div className="card-label"><span>Pemasukan & Pengeluaran</span><span className="date-chip">{monthLabel}</span></div><MaskedAmount className="stat-number">{idr.format(data.flow.income)}</MaskedAmount><p className="muted small-text">Masuk: {idr.format(data.flow.income)}</p><p className="muted small-text">Keluar: {idr.format(data.flow.expenses)}</p></Card>
-          <Card><div className="card-label"><span>Saldo Utama</span></div><MaskedAmount className="stat-number">{idr.format(Number(data.wallets[0]?.balance) || 0)}</MaskedAmount><p className="muted small-text">{data.wallets[0]?.name}</p><Link className="text-link" href="/wallets">Kelola semua <ChevronRight size={15} /></Link></Card>
+        <div className="summary-grid overview-summary">
+          <Card><div className="card-label"><span>Pemasukan &amp; Pengeluaran</span><span className="date-chip">{monthLabel}</span></div><div className="flow-hero"><MaskedAmount className="stat-number">{idr.format(data.flow.income)}</MaskedAmount><FlowTrend curr={data.flow.income} prev={data.flow.prevIncome} goodWhenUp label={prevMonthLabel} /></div><p className="muted small-text">Uang keluar: <MaskedAmount>{idr.format(data.flow.expenses)}</MaskedAmount> <FlowTrend curr={data.flow.expenses} prev={data.flow.prevExpenses} goodWhenUp={false} label={prevMonthLabel} /></p><p className="muted small-text">Sisa: <MaskedAmount>{`${netFlow >= 0 ? "+" : "-"}${idr.format(Math.abs(netFlow))}`}</MaskedAmount></p><div className={`burn-bar${burnRate >= 85 ? " high" : ""}`} role="img" aria-label={`${burnRate}% pemasukan terpakai`}><i style={{ width: `${burnRate}%` }} /></div><small className="muted burn-note">{burnRate}% pemasukan terpakai bulan ini</small><div className="flow-stats"><div className="flow-stat"><small>Rata-rata /hari</small><MaskedAmount className="flow-stat-value">{compactIdr.format(dayAvg)}</MaskedAmount></div><div className="flow-stat"><small>Proyeksi akhir bulan</small><MaskedAmount className="flow-stat-value">{compactIdr.format(projection)}</MaskedAmount></div><div className="flow-stat"><small>Kategori terbesar</small>{topCategory && <span className="flow-stat-value">{topCategory.category} · <MaskedAmount>{compactIdr.format(topCategory.total)}</MaskedAmount></span>}</div></div></Card>
+          <Card><div className="card-label"><span>Wallet Teraktif</span></div><p className="muted small-text">Paling sering dipakai pengeluaran</p><div className="active-wallets">{data.topWallets.map((w, i) => <div className="active-wallet" key={w.id}><small className="rank">{i + 1}</small><div className="wallet-name"><strong>{w.name}</strong><small>{w.cnt}&times; transaksi</small></div><MaskedAmount className="active-total">{idr.format(w.total)}</MaskedAmount></div>)}</div><Link className="text-link" href="/wallets">Kelola semua <ChevronRight size={15} /></Link></Card>
         </div>
         <Card className="wide-card balance-chart" id="balance-history"><CashflowChart {...cashflow} /></Card>
         <div className="section-grid">
