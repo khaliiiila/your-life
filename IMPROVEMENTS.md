@@ -11,7 +11,6 @@ Backlog kecil untuk penyempurnaan yang sengaja ditunda. Kerjakan hanya ketika pe
 | Debts | Edit, hapus, atau arsipkan utang | Data utang perlu dikoreksi setelah dibuat |
 | Debts | Riwayat cicilan per utang | Satu utang memiliki beberapa pembayaran |
 | Assets | Riwayat valuasi | Perlu melihat perubahan nilai dari waktu ke waktu |
-| Assets | Harga saham dan crypto otomatis | Pembaruan manual mulai menyita waktu |
 | Upcoming | Edit jadwal | Jadwal berulang sering berubah |
 | Dashboard | Grafik tren bulanan | Data sudah mencakup minimal tiga bulan |
 | Data | Backup dan restore dari UI | Aplikasi mulai dipakai rutin atau dipindah server |

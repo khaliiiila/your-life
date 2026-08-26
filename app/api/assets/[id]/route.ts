@@ -1,11 +1,16 @@
 import { NextResponse } from "next/server";
-import { deleteAsset, updateAssetValue } from "@/lib/assets";
+import { deleteAsset, updateAssetTicker, updateAssetValue } from "@/lib/assets";
 
 type Context = { params: Promise<{ id: string }> };
 
 export async function PATCH(request: Request, context: Context) {
   try {
     const { id } = await context.params; const body = await request.json();
+    if (body.ticker !== undefined) {
+      const t = body.ticker ? String(body.ticker).trim().toUpperCase() : null;
+      if (t && !/^[A-Z0-9.\-]{1,20}$/.test(t)) return NextResponse.json({ error: "Format ticker tidak valid." }, { status: 400 });
+      await updateAssetTicker(id, t); return NextResponse.json({ ok: true });
+    }
     if (!Number.isInteger(body.currentValue) || body.currentValue < 0 || !body.valuationDate) return NextResponse.json({ error: "Nilai dan tanggal valuasi wajib diisi." }, { status: 400 });
     await updateAssetValue(id, body.currentValue, body.valuationDate); return NextResponse.json({ ok: true });
   } catch (error) { return NextResponse.json({ error: error instanceof Error ? error.message : "Nilai tidak dapat diperbarui." }, { status: 400 }); }

@@ -16,6 +16,8 @@ CREATE INDEX debt_payments_debt_idx ON debt_payments(debt_id);
 CREATE INDEX upcoming_expenses_status_due_idx ON upcoming_expenses(status,due_date);
 CREATE INDEX debts_status_due_idx ON debts(status,due_date);
 CREATE INDEX wishlists_status_priority_idx ON wishlists(status,priority);
+` },{ version: 2, sql: `
+ALTER TABLE assets ADD COLUMN IF NOT EXISTS ticker TEXT;
 ` }];
 
 async function migrate(){const client=await db.connect();try{await client.query("BEGIN");await client.query("CREATE TABLE IF NOT EXISTS schema_migrations (version INTEGER PRIMARY KEY,applied_at TIMESTAMPTZ NOT NULL DEFAULT NOW())");for(const migration of migrations){if((await client.query("SELECT 1 FROM schema_migrations WHERE version=$1",[migration.version])).rowCount)continue;await client.query(migration.sql);await client.query("INSERT INTO schema_migrations(version) VALUES($1)",[migration.version]);}await client.query("COMMIT");console.log("Database migrations applied.");}catch(error){await client.query("ROLLBACK");throw error;}finally{client.release();await db.end();}}
