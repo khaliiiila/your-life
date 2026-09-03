@@ -17,15 +17,17 @@ export async function GET(request: Request) {
     if (!tickers.length) return NextResponse.json({ series: [], tickers: [] });
     const allBars = await Promise.all(tickers.map(async ({ t, qty }) => ({ t, qty, bars: await fetchSeries(t, period) })));
     const byDate = new Map<string, number>();
+    let covered = 0;
     for (const { qty, bars } of allBars) {
       if (!bars?.length) continue;
+      covered++;
       for (const b of bars) {
         const d = b.time.slice(0, 10);
         byDate.set(d, (byDate.get(d) ?? 0) + Math.round(b.close * qty));
       }
     }
     const series = Array.from(byDate.entries()).sort((a, b) => a[0].localeCompare(b[0])).map(([date, value]) => ({ date, value }));
-    const data = { series, tickers: tickers.map((x) => x.t) };
+    const data = { series, tickers: tickers.map((x) => x.t), covered };
     cache.set(key, { exp: Date.now() + 60 * 60_000, data });
     return NextResponse.json(data);
   } catch (e) {

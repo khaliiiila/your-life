@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 
-const TABLES = ["wallets", "debts", "assets", "upcoming_expenses", "transfers", "transactions", "wishlists", "debt_payments"];
+const TABLES = ["wallets", "debts", "assets", "upcoming_expenses", "transfers", "transactions", "wishlists", "debt_payments", "asset_valuations"];
 
 function escapeLiteral(value: string) {
   return `'${value.replace(/'/g, "''")}'`;

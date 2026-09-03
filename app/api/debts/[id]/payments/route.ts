@@ -1,10 +1,12 @@
 import { NextResponse } from "next/server";
 import { payDebt } from "@/lib/debts";
+import { createBulkDebtPayments } from "@/lib/bulk";
 
 export async function POST(request: Request, context: { params: Promise<{ id: string }> }) {
   try {
     const { id } = await context.params;
     const body = await request.json();
+    if (Array.isArray(body.payments)) return NextResponse.json(await createBulkDebtPayments(body.payments.map((payment: Record<string, unknown>) => ({ ...payment, debtId: id }))), { status: 201 });
     if (!body.walletId || !body.date || !Number.isInteger(body.amount) || body.amount <= 0) return NextResponse.json({ error: "Lengkapi wallet, tanggal, dan nominal positif." }, { status: 400 });
     return NextResponse.json({ transactionId: await payDebt(id, body.walletId, body.amount, body.date, body.note) }, { status: 201 });
   } catch (error) {

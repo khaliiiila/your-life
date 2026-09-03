@@ -31,24 +31,29 @@ Semua route AI memakai prefix `/api/ai` dan memetakan ke CRUD aplikasi:
 | Method | Endpoint | Fungsi |
 | --- | --- | --- |
 | GET | `/api/ai/dashboard` | Ringkasan saldo, arus kas, aset, utang |
-| GET/POST | `/api/ai/wallets` | Baca/tambah wallet |
+| GET/POST | `/api/ai/wallets` | Baca/tambah wallet; bulk dengan `{"wallets":[...]}` (atomik) |
 | PATCH/DELETE | `/api/ai/wallets/:id` | Update/hapus wallet |
-| GET/POST | `/api/ai/transactions` | Baca/tambah transaksi |
+| GET/POST | `/api/ai/transactions` | Baca/tambah transaksi; bulk dengan `{"transactions":[...]}` (atomik) |
 | GET/PATCH/DELETE | `/api/ai/transactions/:id` | Detail/update/hapus transaksi |
-| POST | `/api/ai/transfers` | Transfer antar-wallet atomik |
-| GET/POST | `/api/ai/debts` | Baca/tambah utang/piutang |
+| POST | `/api/ai/transfers` | Transfer satu atau bulk antar-wallet atomik; untuk banyak transfer kirim `{"transfers":[...]}`, bisa pakai nama wallet, `amount:"all"`, dan `createDestination` |
+| GET/POST | `/api/ai/debts` | Baca/tambah utang/piutang; bulk dengan `{"debts":[...]}` (atomik) |
 | PATCH/DELETE | `/api/ai/debts/:id` | Update/hapus utang |
-| POST | `/api/ai/debts/:id/payments` | Catat pembayaran |
-| GET/POST | `/api/ai/assets` | Baca/tambah aset (stock: `ticker` otomatis dari `name`) |
+| POST | `/api/ai/debts/:id/payments` | Catat pembayaran; bulk dengan `{"payments":[...]}` (atomik) |
+| GET/POST | `/api/ai/assets` | Baca/tambah aset; bulk dengan `{"assets":[...]}` (atomik; stock: `ticker` otomatis dari `name`) |
 | PATCH/DELETE | `/api/ai/assets/:id` | Update valuasi/hapus aset; PATCH `{"ticker":"BBCA"}` untuk set ticker manual (non-stock) |
 | POST | `/api/assets/sync` | Sync harga saham via BidBot (close × qty → `current_value`) |
 | GET | `/api/assets/scanner?kind=tops\|topr\|topk` | Scanner saham BidBot (cache 15m) |
 | GET | `/api/assets/analysis?ticker=BBCA` | Analisis saham: entry verdict, technical, pattern, fundamental (cache 1j) |
 | GET | `/api/assets/history?period=1mo\|3mo\|6mo\|1y` | Histori nilai portofolio saham (agregasi close × qty, cache 1j) |
 | POST | `/api/assets/insights/broadcast` | Broadcast insight harian saham pegangan ke Telegram (1 bubble/4 saham, header tanggal) |
-| GET/POST | `/api/ai/upcoming-expenses` | Baca/tambah pengeluaran mendatang |
+| POST | `/api/whale/ingest` | Ingest snapshot whale/BPJS dari stock-watch (auth: `Bearer WHALE_INGEST_SECRET`) |
+| GET | `/api/whale` | Snapshot whale terbaru + presets (akumulasi/hold/distribusi/day-trade, cache 15m) |
+| GET | `/api/whale/history?code=BBCA` | Riwayat per saham dari semua snapshot (maks 30 terakhir) |
+| GET | `/api/assets/:id/valuations` | Riwayat valuasi aset (terisi otomatis saat sync harga, dedup per hari) |
+| GET | `/api/bidbot-series?ticker=BBCA&period=3mo` | Seri harga satu saham dari BidBot (cache 15m) |
+| GET/POST | `/api/ai/upcoming-expenses` | Baca/tambah pengeluaran mendatang; bulk dengan `{"expenses":[...]}` (atomik) |
 | PATCH/POST/DELETE | `/api/ai/upcoming-expenses/:id` | Update/bayar/hapus jadwal |
-| GET/POST | `/api/ai/wishlists` | Baca/tambah wishlist |
+| GET/POST | `/api/ai/wishlists` | Baca/tambah wishlist; bulk dengan `{"wishlists":[...]}` (atomik) |
 | PATCH/DELETE | `/api/ai/wishlists/:id` | Update progress/hapus wishlist |
 | GET | `/api/ai/reports/daily` | Generate teks laporan harian (target: `today` / `yesterday`) |
 | POST | `/api/ai/reports/daily/send` | Generate & kirim laporan harian ke Telegram |
@@ -159,6 +164,21 @@ BIDBOT_EMAIL=khalilaelcuan@gmail.com
 BIDBOT_PASSWORD=***
 AI_API_KEY=ganti-dengan-rahasia-panjang
 DB_SYNC_SECRET=rahasia-acak-64-karakter
+WHALE_INGEST_SECRET=rahasia-acak-64-karakter
+```
+
+## Integrasi Stock-Watch (Whale/BPJS)
+
+Project `stock-watch` (Python, sejajar repo ini) fetch data `ihsgscreener.com`, generate preset skor, kirim Telegram, lalu POST hasilnya ke `/api/whale/ingest`. Data tersimpan di tabel `whale_snapshots` (payload JSONB) + `whale_stock_history` (per saham per snapshot), snapshot >45 hari dibersihkan otomatis. UI: tab **Whale** di halaman Aset + halaman **Pasar Saham** (`/stocks`).
+
+Setup stock-watch `.env`:
+
+```env
+TG_BOT_TOKEN=...
+TG_CHAT_ID=...
+TG_THREAD_ID=...
+INGEST_URL=http://localhost:13003/api/whale/ingest   # atau https://yl.infoinfo.web.id
+INGEST_SECRET=<sama dengan WHALE_INGEST_SECRET di web>
 ```
 
 ## Pagination

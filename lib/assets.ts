@@ -22,20 +22,40 @@ export async function updateAssetTicker(id: string, ticker: string | null) {
 
 export async function syncAssetPrices(fetchPrice: (ticker: string) => Promise<{ close: number; date: string }>) {
   const rows = (await query<{ id: string; ticker: string | null; quantity: string; asset_type: string; name: string }>("SELECT id, ticker, quantity, asset_type, name FROM assets")).rows;
-  const results: { id: string; ticker: string; ok: boolean; price?: number; error?: string }[] = [];
+  const jobs: { id: string; ticker: string; quantity: number }[] = [];
   for (const r of rows) {
     const eff = (r.ticker?.trim() || (r.asset_type === "stock" ? r.name.trim().toUpperCase() : "")) || "";
     if (!eff) continue;
-    try {
-      const { close, date } = await fetchPrice(eff);
-      const total = Math.round(close * Number(r.quantity));
-      await query("UPDATE assets SET current_value=$1, valuation_date=$2, ticker=COALESCE(ticker, CASE WHEN asset_type='stock' THEN $4 ELSE ticker END), updated_at=NOW() WHERE id=$3", [total, date, r.id, eff]);
-      results.push({ id: r.id, ticker: eff, ok: true, price: total });
-    } catch (e) {
-      results.push({ id: r.id, ticker: eff, ok: false, error: e instanceof Error ? e.message : String(e) });
-    }
+    jobs.push({ id: r.id, ticker: eff, quantity: Number(r.quantity) });
+  }
+  // Konkurensi terbatas: 10 batch paralel (ponytail: cukup; naikkan bila portfolio besar)
+  const results: { id: string; ticker: string; ok: boolean; price?: number; error?: string }[] = [];
+  const BATCH = 10;
+  for (let i = 0; i < jobs.length; i += BATCH) {
+    const batch = jobs.slice(i, i + BATCH);
+    const settled = await Promise.all(batch.map(async ({ id, ticker, quantity }) => {
+      try {
+        const { close, date } = await fetchPrice(ticker);
+        const total = Math.round(close * quantity);
+        await query("UPDATE assets SET current_value=$1, valuation_date=$2, ticker=COALESCE(ticker, CASE WHEN asset_type='stock' THEN $4 ELSE ticker END), updated_at=NOW() WHERE id=$3", [total, date, id, ticker]);
+        await recordValuation(id, total, date);
+        return { id, ticker, ok: true as const, price: total };
+      } catch (e) {
+        return { id, ticker, ok: false as const, error: e instanceof Error ? e.message : String(e) };
+      }
+    }));
+    results.push(...settled);
   }
   return results;
+}
+
+export async function recordValuation(assetId: string, value: number, date: string) {
+  // Dedup per (asset, date); pakai snapshot terbaru dari sync harian.
+  await query(
+    `INSERT INTO asset_valuations (id, asset_id, value, date) VALUES ($1,$2,$3,$4)
+     ON CONFLICT (asset_id, date) DO UPDATE SET value=EXCLUDED.value, created_at=NOW()`,
+    [`val_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`, assetId, value, date],
+  );
 }
 
 export async function updateAssetValue(id: string, currentValue: number, valuationDate: string) {

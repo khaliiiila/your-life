@@ -3,23 +3,9 @@ import { query } from "@/lib/db";
 import { fetchEntry, fetchInsight, fetchSmartMoney, fetchTechnical } from "@/lib/bidbot";
 import { sendTelegramMessage } from "@/lib/telegram";
 import { idr } from "@/lib/formatters";
+import { computeRecommendation } from "@/lib/insights";
 
 export const dynamic = "force-dynamic";
-
-function rec(entry: Record<string, unknown> | null, tech: Record<string, unknown> | null, smart: Record<string, unknown> | null, gainPct: number) {
-  const verdict = (entry as { verdict?: string })?.verdict ?? "";
-  const exitW = (tech as { exit_warning?: boolean })?.exit_warning ?? (entry as { tech?: { exit_warning?: boolean } })?.tech?.exit_warning ?? false;
-  const trend = (tech as { trend_score?: number })?.trend_score ?? (entry as { tech?: { trend_score?: number } })?.tech?.trend_score ?? 0;
-  const leaderTrend = (smart as { leader_trend?: string })?.leader_trend ?? (entry as { smart?: { leader_trend?: string } })?.smart?.leader_trend ?? "";
-  const diff = (smart as { diff_pct?: number })?.diff_pct ?? (entry as { smart?: { diff_pct?: number } })?.smart?.diff_pct ?? 99;
-  if (exitW) return "⚠️ WASPADA — sinyal exit, pertimbangkan CUTLOSS sebagian";
-  if (verdict === "ENTRY OK" && gainPct < -5 && leaderTrend === "BUILDING" && Math.abs(diff) < 5) return "🔵 AVG DOWN pertimbangkan — bandar akumulasi di dekat avg mereka";
-  if (verdict === "ENTRY OK" && gainPct >= 0 && trend > 0.6) return "🟢 TAMBAH PORSI — trend bagus & posisi profit";
-  if (verdict === "ENTRY OK" && gainPct < -8) return "🟡 WAIT / AVG DOWN hati-hati — tunggu konfirmasi, jangan buru-buru";
-  if (verdict === "WATCHLIST") return "🟡 WAIT — belum sinyal entry kuat";
-  if (gainPct < -12 && trend < 0.4) return "🔴 CUTLOSS evaluasi — downtrend & loss dalam";
-  return "🟡 WAIT — pantau";
-}
 
 function fmt(n: number) { return idr.format(Math.round(n)); }
 
@@ -57,7 +43,15 @@ export async function POST(request: Request) {
         const trend = (tech as { trend_score?: number })?.trend_score ?? e?.tech?.trend_score ?? 0;
         const chg = (tech as { chg_pct?: number })?.chg_pct ?? e?.tech?.chg_pct ?? 0;
         const wy = (insight as { wyckoff?: { phase_label?: string } })?.wyckoff?.phase_label ?? "—";
-        const recText = rec(entry as Record<string, unknown> | null, tech as Record<string, unknown> | null, (smart as Record<string, unknown>) ?? (entry as Record<string, unknown>)?.smart as Record<string, unknown> | null, priceGainPct);
+        const exitW = (tech as { exit_warning?: boolean })?.exit_warning ?? e?.tech?.exit_warning ?? false;
+        const recText = computeRecommendation({
+          verdict: e?.verdict ?? "",
+          exit_warning: !!exitW,
+          trend_score: Number(trend),
+          leader_trend: lTrend,
+          diff_pct: Number(diff),
+          gain_pct: priceGainPct,
+        });
         const block =
           `<b>${icon} ${ticker} — ${verdict} (${total}/97)</b>\n` +
           `Harga: ${cur ? fmt(cur) : "—"} (${chg >= 0 ? "+" : ""}${chg.toFixed(2)}%) | Trend ${Number(trend).toFixed(2)} | Wyckoff ${wy}\n` +

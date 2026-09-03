@@ -51,11 +51,16 @@ async function bidbotFetch(path: string, retry = true): Promise<Response> {
   return res;
 }
 
+export async function fetchSeries(ticker: string, period: string = "3mo") {
+  const res = await bidbotFetch(`/api/stocks/${encodeURIComponent(ticker)}/technical/series?period=${period}&mode=range`);
+  if (!res.ok) return null;
+  const data = (await res.json()) as { bars: { time: string; close: number }[] };
+  return data.bars ?? null;
+}
+
 export async function fetchPrice(ticker: string) {
-  const res = await bidbotFetch(`/api/stocks/${encodeURIComponent(ticker)}/technical/series?period=1d&mode=range`);
-  if (!res.ok) throw new Error(`Harga ${ticker} gagal (${res.status})`);
-  const data = (await res.json()) as { bars: { close: number; time: string }[] };
-  const last = data.bars?.[data.bars.length - 1];
+  const bars = await fetchSeries(ticker, "1d");
+  const last = bars?.[bars.length - 1];
   if (!last?.close) throw new Error(`Bar ${ticker} kosong`);
   return { close: Math.round(last.close), date: last.time.slice(0, 10) };
 }
@@ -112,13 +117,6 @@ export async function fetchFlowCharts(ticker: string) {
   const res = await bidbotFetch(`/api/stocks/${encodeURIComponent(ticker)}/flow/charts`);
   if (!res.ok) return null;
   return res.json();
-}
-
-export async function fetchSeries(ticker: string, period: string = "3mo") {
-  const res = await bidbotFetch(`/api/stocks/${encodeURIComponent(ticker)}/technical/series?period=${period}&mode=range`);
-  if (!res.ok) return null;
-  const data = (await res.json()) as { bars: { time: string; close: number }[] };
-  return data.bars ?? null;
 }
 
 export async function fetchAnalysis(ticker: string) {

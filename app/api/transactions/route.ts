@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createTransaction, listTransactions } from "@/lib/transactions";
 import { paginationMeta, parsePagination } from "@/lib/pagination";
+import { createBulkTransactions } from "@/lib/bulk";
 
 export const dynamic = "force-dynamic";
 
@@ -14,6 +15,7 @@ export async function GET(request: Request) {
 export async function POST(request: Request) {
   try {
     const body = await request.json();
+    if (Array.isArray(body.transactions)) return NextResponse.json(await createBulkTransactions(body.transactions), { status: 201 });
     if (!['income', 'expense'].includes(body.type) || !body.walletId || !body.category || !body.date || !Number.isInteger(body.amount) || body.amount <= 0) return NextResponse.json({ error: "Lengkapi tipe, wallet, kategori, tanggal, dan nominal positif." }, { status: 400 });
     const id = await createTransaction(body);
     return NextResponse.json({ id }, { status: 201 });

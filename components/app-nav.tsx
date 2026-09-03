@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowUpRight, BarChart3, CalendarClock, CircleDollarSign, CreditCard, Gift, LayoutDashboard, MoreHorizontal, WalletCards } from "lucide-react";
+import { ArrowUpRight, BarChart3, CalendarClock, CandlestickChart, CircleDollarSign, CreditCard, Gift, LayoutDashboard, MoreHorizontal, WalletCards } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
@@ -20,6 +20,7 @@ export function AppNav() {
       <Link className={`nav-item ${isActive("/wallets") ? "active" : ""}`} href="/wallets"><WalletCards size={18} />Wallet</Link>
       <Link className={`nav-item ${isActive("/analytics") ? "active" : ""}`} href="/analytics"><BarChart3 size={18} />Analitik</Link>
       <Link className={`nav-item ${isActive("/assets") ? "active" : ""}`} href="/assets"><BarChart3 size={18} />Aset & Investasi</Link>
+      <Link className={`nav-item ${isActive("/stocks") ? "active" : ""}`} href="/stocks"><CandlestickChart size={18} />Pasar Saham</Link>
       <Link className={`nav-item ${isActive("/debts") ? "active" : ""}`} href="/debts"><CreditCard size={18} />Utang</Link>
       <Link className={`nav-item ${isActive("/wishlists") ? "active" : ""}`} href="/wishlists"><Gift size={18} />Wishlist</Link>
     </nav>

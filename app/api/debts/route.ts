@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createDebt, listDebts } from "@/lib/debts";
 import { paginationMeta, parsePagination } from "@/lib/pagination";
+import { createBulkDebts } from "@/lib/bulk";
 
 export const dynamic = "force-dynamic";
 
@@ -13,6 +14,7 @@ export async function GET(request: Request) {
 export async function POST(request: Request) {
   try {
     const body = await request.json();
+    if (Array.isArray(body.debts)) return NextResponse.json(await createBulkDebts(body.debts), { status: 201 });
     if (!body.name?.trim() || !["owed_by_me", "owed_to_me"].includes(body.direction) || !Number.isInteger(body.principalAmount) || body.principalAmount <= 0) return NextResponse.json({ error: "Lengkapi nama, arah, dan nominal positif." }, { status: 400 });
     return NextResponse.json({ id: await createDebt(body) }, { status: 201 });
   } catch {

@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createAsset, listAssets } from "@/lib/assets";
 import { paginationMeta, parsePagination } from "@/lib/pagination";
+import { createBulkAssets } from "@/lib/bulk";
 
 export const dynamic = "force-dynamic";
 
@@ -13,6 +14,7 @@ export async function GET(request: Request) {
 export async function POST(request: Request) {
   try {
     const body = await request.json();
+    if (Array.isArray(body.assets)) return NextResponse.json(await createBulkAssets(body.assets), { status: 201 });
     if (!body.name?.trim() || !body.category || !body.assetType || typeof body.quantity !== "number" || body.quantity <= 0 || !Number.isInteger(body.purchaseValue) || body.purchaseValue < 0 || !Number.isInteger(body.currentValue) || body.currentValue < 0) return NextResponse.json({ error: "Lengkapi nama, jenis, jumlah, dan nilai aset yang valid." }, { status: 400 });
     return NextResponse.json({ id: await createAsset(body) }, { status: 201 });
   } catch {

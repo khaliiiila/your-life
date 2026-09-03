@@ -18,6 +18,12 @@ CREATE INDEX debts_status_due_idx ON debts(status,due_date);
 CREATE INDEX wishlists_status_priority_idx ON wishlists(status,priority);
 ` },{ version: 2, sql: `
 ALTER TABLE assets ADD COLUMN IF NOT EXISTS ticker TEXT;
+` },{ version: 3, sql: `
+CREATE TABLE IF NOT EXISTS whale_snapshots (id TEXT PRIMARY KEY,stored_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),date DATE,session TEXT,notes TEXT,payload JSONB NOT NULL);
+CREATE TABLE IF NOT EXISTS whale_stock_history (snapshot_id TEXT NOT NULL REFERENCES whale_snapshots(id) ON DELETE CASCADE,code TEXT NOT NULL,status TEXT,color TEXT,net BIGINT NOT NULL DEFAULT 0,bval BIGINT NOT NULL DEFAULT 0,sval BIGINT NOT NULL DEFAULT 0,bfrq INTEGER NOT NULL DEFAULT 0,sfrq INTEGER NOT NULL DEFAULT 0,bavg NUMERIC,savg NUMERIC,last_price BIGINT NOT NULL DEFAULT 0,chg1d NUMERIC,fh NUMERIC,fl NUMERIC,signal TEXT,score INTEGER,PRIMARY KEY(snapshot_id,code));
+CREATE INDEX IF NOT EXISTS whale_stock_history_code_idx ON whale_stock_history(code);
+CREATE TABLE IF NOT EXISTS asset_valuations (id TEXT PRIMARY KEY,asset_id TEXT NOT NULL REFERENCES assets(id) ON DELETE CASCADE,value BIGINT NOT NULL,date DATE NOT NULL,created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),UNIQUE(asset_id,date));
+CREATE INDEX IF NOT EXISTS asset_valuations_asset_date_idx ON asset_valuations(asset_id,date);
 ` }];
 
 async function migrate(){const client=await db.connect();try{await client.query("BEGIN");await client.query("CREATE TABLE IF NOT EXISTS schema_migrations (version INTEGER PRIMARY KEY,applied_at TIMESTAMPTZ NOT NULL DEFAULT NOW())");for(const migration of migrations){if((await client.query("SELECT 1 FROM schema_migrations WHERE version=$1",[migration.version])).rowCount)continue;await client.query(migration.sql);await client.query("INSERT INTO schema_migrations(version) VALUES($1)",[migration.version]);}await client.query("COMMIT");console.log("Database migrations applied.");}catch(error){await client.query("ROLLBACK");throw error;}finally{client.release();await db.end();}}

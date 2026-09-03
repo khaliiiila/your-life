@@ -10,7 +10,7 @@ Backlog kecil untuk penyempurnaan yang sengaja ditunda. Kerjakan hanya ketika pe
 | Transactions | Filter tanggal, wallet, dan kategori di UI | Daftar transaksi sulit ditelusuri |
 | Debts | Edit, hapus, atau arsipkan utang | Data utang perlu dikoreksi setelah dibuat |
 | Debts | Riwayat cicilan per utang | Satu utang memiliki beberapa pembayaran |
-| Assets | Riwayat valuasi | Perlu melihat perubahan nilai dari waktu ke waktu |
+| Assets | Riwayat valuasi | ~~Perlu melihat perubahan nilai dari waktu ke waktu~~ ✅ Selesai: tabel `asset_valuations` (auto saat sync, dedup harian) + panel riwayat di halaman Aset |
 | Upcoming | Edit jadwal | Jadwal berulang sering berubah |
 | Dashboard | Grafik tren bulanan | Data sudah mencakup minimal tiga bulan |
 | Data | Backup dan restore dari UI | Aplikasi mulai dipakai rutin atau dipindah server |

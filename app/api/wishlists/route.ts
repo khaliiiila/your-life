@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createWishlist, listWishlists } from "@/lib/wishlists";
 import { paginationMeta, parsePagination } from "@/lib/pagination";
+import { createBulkWishlists } from "@/lib/bulk";
 
 export const dynamic = "force-dynamic";
 
@@ -13,6 +14,7 @@ export async function GET(request: Request) {
 export async function POST(request: Request) {
   try {
     const body = await request.json();
+    if (Array.isArray(body.wishlists)) return NextResponse.json(await createBulkWishlists(body.wishlists), { status: 201 });
     if (!body.name?.trim() || !Number.isInteger(body.targetAmount) || body.targetAmount <= 0 || !Number.isInteger(body.savedAmount) || body.savedAmount < 0 || body.savedAmount > body.targetAmount || !["low", "medium", "high"].includes(body.priority)) {
       return NextResponse.json({ error: "Lengkapi nama, target, tabungan awal, dan prioritas yang valid." }, { status: 400 });
     }
