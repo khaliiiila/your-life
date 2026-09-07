@@ -65,10 +65,7 @@ services:
     depends_on:
       app:
         condition: service_healthy
-    command: >-
-      sh -c "mkdir -p /data/logs &&
-      printf '0 6 * * * sh -c \"mkdir -p /data/logs && cd /app && node scripts/send-scheduled-report.mjs yesterday >> /data/logs/reports.log 2>&1\"\n0 22 * * * sh -c \"mkdir -p /data/logs && cd /app && node scripts/send-scheduled-report.mjs today >> /data/logs/reports.log 2>&1\"\n30 17 * * * sh -c \"mkdir -p /data/logs && cd /app && node scripts/sync-asset-prices.mjs >> /data/logs/bidbot-sync.log 2>&1\"\n5 6 * * 1-5 sh -c \"mkdir -p /data/logs && cd /app && node scripts/send-asset-insights.mjs >> /data/logs/asset-insights.log 2>&1\"\n' > /etc/crontabs/root &&
-      crond -f -l 2 -L /data/logs/cron.log"
+    command: sh -c "mkdir -p /data/logs && node scripts/scheduler.mjs"
     restart: unless-stopped
 
 volumes:
