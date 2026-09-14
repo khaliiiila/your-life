@@ -58,6 +58,10 @@ Semua route AI memakai prefix `/api/ai` dan memetakan ke CRUD aplikasi:
 | GET | `/api/ai/reports/daily` | Generate teks laporan harian (target: `today` / `yesterday`) |
 | POST | `/api/ai/reports/daily/send` | Generate & kirim laporan harian ke Telegram |
 | POST | `/api/ai/telegram/send` | Kirim pesan bebas ke Telegram |
+| GET/POST | `/api/ai/trading-plans` | Baca/buat trading plan; filter `?status=active` |
+| PATCH/DELETE | `/api/ai/trading-plans/:id` | Update status/note atau hapus trading plan |
+| POST/GET | `/api/ai/trading-plans/alert` | Cek active plans lalu kirim alert ke Telegram jika harga kena entry/SL/target |
+| POST/GET | `/api/ai/trading-plans/broadcast` | Kirim daftar trading plan aktif ke Telegram |
 
 ## DB Sync (Cloning Production → Dev)
 
@@ -242,6 +246,32 @@ curl -X POST http://localhost:3001/api/ai/telegram/send \
   -H "Authorization: Bearer $AI_API_KEY" \
   -H "Content-Type: application/json" \
   -d '{"message":"<b>Notifikasi AI</b>\nPengeluaran terdeteksi melebihi batas."}'
+```
+
+```bash
+curl -H "Authorization: Bearer $AI_API_KEY" \
+  "http://localhost:3001/api/ai/trading-plans?status=active"
+```
+
+```bash
+curl -X POST http://localhost:3001/api/ai/trading-plans \
+  -H "Authorization: Bearer $AI_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{"ticker":"BBCA","entryLow":127,"entryHigh":133,"stopLoss":124,"targetLow":140,"targetHigh":160}'
+```
+
+```bash
+curl -X POST http://localhost:3001/api/ai/trading-plans/alert \
+  -H "Authorization: Bearer $AI_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{}'
+```
+
+```bash
+curl -X POST http://localhost:3001/api/ai/trading-plans/broadcast \
+  -H "Authorization: Bearer $AI_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{}'
 ```
 
 Response error konsisten memakai:

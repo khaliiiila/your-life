@@ -80,6 +80,22 @@ export async function GET() {
       "/api/ai/telegram/send": { 
         post: { summary: "Kirim pesan ke Telegram", requestBody: { required: true, content: { "application/json": { schema: { $ref: "#/components/schemas/TelegramSendInput" } } } }, responses: { "200": { description: "Message sent" } } } 
       },
+      "/api/ai/trading-plans": {
+        get: { summary: "Daftar trading plan", parameters: [{ name: "status", in: "query", schema: { type: "string", enum: ["active", "hit", "stopped", "closed"] } }], responses: { "200": { description: "Trading plan list" } } },
+        post: { summary: "Tambah trading plan", requestBody: { required: true, content: { "application/json": { schema: { $ref: "#/components/schemas/TradingPlanInput" } } } }, responses: { "201": { description: "Trading plan created" } } }
+      },
+      "/api/ai/trading-plans/{id}": {
+        patch: { summary: "Update trading plan", parameters: [{ name: "id", in: "path", required: true, schema: { type: "string" } }], requestBody: { required: true, content: { "application/json": { schema: { $ref: "#/components/schemas/TradingPlanUpdateInput" } } } }, responses: { "200": { description: "Trading plan updated" } } },
+        delete: { summary: "Hapus trading plan", parameters: [{ name: "id", in: "path", required: true, schema: { type: "string" } }], responses: { "200": { description: "Trading plan deleted" } } }
+      },
+      "/api/ai/trading-plans/alert": {
+        get: { summary: "Cek price alert trading plan", parameters: [{ name: "chatId", in: "query", schema: { type: "string" } }], responses: { "200": { description: "Alert checked" } } },
+        post: { summary: "Jalankan price alert trading plan", requestBody: { required: false, content: { "application/json": { schema: { type: "object", properties: { chatId: { type: "string" } } } } } }, responses: { "200": { description: "Alert checked" } } }
+      },
+      "/api/ai/trading-plans/broadcast": {
+        get: { summary: "Broadcast trading plan aktif", parameters: [{ name: "chatId", in: "query", schema: { type: "string" } }], responses: { "200": { description: "Broadcast sent" } } },
+        post: { summary: "Broadcast trading plan aktif", requestBody: { required: false, content: { "application/json": { schema: { type: "object", properties: { chatId: { type: "string" } } } } } }, responses: { "200": { description: "Broadcast sent" } } }
+      },
       "/api/whale/ingest": {
         post: { summary: "Ingest snapshot whale/BPJS dari stock-watch", security: [{ BearerAuth: [] }], requestBody: { required: true, content: { "application/json": { schema: { type: "object", properties: { savedAt: { type: "string" }, date: { type: "string", format: "date" }, session: { type: "string" }, notes: { type: "string" }, whaleStocks: { type: "array" }, bpjsStocks: { type: "array" }, presets: { type: "object" } } } } } }, responses: { "200": { description: "Snapshot stored" } } }
       },
@@ -303,6 +319,27 @@ export async function GET() {
           properties: { 
             message: { type: "string" } 
           } 
+        },
+        TradingPlanInput: {
+          type: "object",
+          required: ["ticker", "entryLow", "stopLoss", "targetLow"],
+          properties: {
+            ticker: { type: "string" },
+            note: { type: "string" },
+            entryLow: { type: "integer", minimum: 1 },
+            entryHigh: { type: "integer", minimum: 1 },
+            stopLoss: { type: "integer", minimum: 1 },
+            targetLow: { type: "integer", minimum: 1 },
+            targetHigh: { type: "integer", minimum: 1 }
+          }
+        },
+        TradingPlanUpdateInput: {
+          type: "object",
+          properties: {
+            status: { type: "string", enum: ["active", "hit", "stopped", "closed"] },
+            note: { type: "string" },
+            lastNotified: { type: "string", enum: ["entry", "sl", "target"] }
+          }
         }
       }
     }
