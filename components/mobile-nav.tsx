@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowUpRight, BarChart3, CalendarClock, CandlestickChart, CreditCard, Gift, LayoutDashboard, Menu, WalletCards, X } from "lucide-react";
+import { ArrowUpRight, BarChart3, CalendarClock, CandlestickChart, CreditCard, Gift, HeartPulse, LayoutDashboard, Menu, WalletCards, X } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
@@ -9,6 +9,8 @@ const links = [
   ["/", "Overview", LayoutDashboard],
   ["/transactions", "Transaksi", ArrowUpRight],
   ["/wallets", "Wallet", WalletCards],
+  ["/analytics", "Analitik", BarChart3],
+  ["/financial-health", "Kesehatan Finansial", HeartPulse],
   ["/assets", "Aset & Investasi", BarChart3],
   ["/stocks", "Pasar Saham", CandlestickChart],
   ["/debts", "Utang", CreditCard],

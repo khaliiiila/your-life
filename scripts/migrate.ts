@@ -24,6 +24,17 @@ CREATE TABLE IF NOT EXISTS whale_stock_history (snapshot_id TEXT NOT NULL REFERE
 CREATE INDEX IF NOT EXISTS whale_stock_history_code_idx ON whale_stock_history(code);
 CREATE TABLE IF NOT EXISTS asset_valuations (id TEXT PRIMARY KEY,asset_id TEXT NOT NULL REFERENCES assets(id) ON DELETE CASCADE,value BIGINT NOT NULL,date DATE NOT NULL,created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),UNIQUE(asset_id,date));
 CREATE INDEX IF NOT EXISTS asset_valuations_asset_date_idx ON asset_valuations(asset_id,date);
+` },{ version: 4, sql: `
+CREATE TABLE IF NOT EXISTS app_settings (
+  id INTEGER PRIMARY KEY DEFAULT 1,
+  theme JSONB,
+  settings JSONB NOT NULL DEFAULT '{}',
+  updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+INSERT INTO app_settings (id, theme, settings) VALUES (1, NULL, '{}') 
+ON CONFLICT (id) DO NOTHING;
+` },{ version: 5, sql: `
+ALTER TABLE app_settings ADD COLUMN IF NOT EXISTS theme JSONB;
 ` }];
 
 async function migrate(){const client=await db.connect();try{await client.query("BEGIN");await client.query("CREATE TABLE IF NOT EXISTS schema_migrations (version INTEGER PRIMARY KEY,applied_at TIMESTAMPTZ NOT NULL DEFAULT NOW())");for(const migration of migrations){if((await client.query("SELECT 1 FROM schema_migrations WHERE version=$1",[migration.version])).rowCount)continue;await client.query(migration.sql);await client.query("INSERT INTO schema_migrations(version) VALUES($1)",[migration.version]);}await client.query("COMMIT");console.log("Database migrations applied.");}catch(error){await client.query("ROLLBACK");throw error;}finally{client.release();await db.end();}}
