@@ -68,6 +68,17 @@ services:
     command: sh -c "mkdir -p /data/logs && node scripts/scheduler.mjs"
     restart: unless-stopped
 
+  cloudflared:
+    image: cloudflare/cloudflared:latest
+    # Quick tunnel (random https://xxx.trycloudflare.com). Cek URL: docker compose logs cloudflared
+    # Untuk tunnel permanen yl.infoinfo.web.id, ganti command jadi: tunnel --no-autoupdate run --token ${TUNNEL_TOKEN}
+    # dan isi TUNNEL_TOKEN di .env (dari Cloudflare Zero Trust Dashboard)
+    command: tunnel --no-autoupdate --url http://app:3000
+    depends_on:
+      app:
+        condition: service_healthy
+    restart: unless-stopped
+
 volumes:
   node_modules:
   postgres_data:
