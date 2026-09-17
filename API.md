@@ -80,11 +80,16 @@ Setelah deploy, endpoint tersedia:
 | Method | Endpoint | Fungsi |
 | --- | --- | --- |
 | GET | `/api/admin/db-export` | Dump PostgreSQL production sebagai SQL (TRUNCATE + INSERT, satu transaksi) |
+| GET | `/api/admin/env-export` | Export `.env` production (whitelist keys) sebagai `text/plain` |
 
 ```bash
 curl -H "Authorization: Bearer $DB_SYNC_SECRET" \
   https://yl.infoinfo.web.id/api/admin/db-export \
   -o keuangan_prod.sql
+
+curl -H "Authorization: Bearer $DB_SYNC_SECRET" \
+  https://yl.infoinfo.web.id/api/admin/env-export \
+  -o .env
 ```
 
 ### Lokal (dev)
